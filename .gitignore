@@ -1,0 +1,8 @@
+# jouw instellingen, wachtwoord, status en analyse-omgeving
+data/
+# sockseek wordt bij de eerste start gedownload
+app/bin/
+# de zips staan als bijlage bij de GitHub-uitgaven
+release/
+__pycache__/
+PlaylistFlac.app/
