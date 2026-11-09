@@ -1,6 +1,6 @@
 # PlaylistFlac
 
-Versie 1.3.4-beta
+Versie 1.3.5-beta
 
 Je Spotify-playlists als mappen met FLAC-bestanden (of mp3 320), gedownload
 via Soulseek.
@@ -12,6 +12,16 @@ alleen de korte radio-versie. Komen er nummers bij op de playlist, dan staan ze
 de volgende keer klaar.
 
 ![PlaylistFlac: per nummer de versies, met een lengtebalk en de Spotify-lengte als cyaan streep](docs/screenshot.png)
+
+## Nieuw in 1.3.5-beta
+
+- **Alleen nieuwe tracks naar Traktor**: de `.nml` op je bureaublad bevat
+  standaard alleen de tracks die net geanalyseerd zijn, als playlist
+  `<playlist> (nieuw)`. Een import overschrijft dus niet meer de cues en grids
+  die je zelf in Traktor hebt aangepast. Wil je toch alles, vink dan *Hele
+  playlist naar Traktor* aan.
+- **Analyseren & exporteren zit nu in het scherm van de playlist**, als
+  uitklapblok. Het aparte venster en de knop linksonder zijn weg.
 
 ## Nieuw in 1.3.4-beta
 
