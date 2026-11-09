@@ -2012,6 +2012,11 @@ function Run-Analyse($task) {
     $out = @{}
     $argList = @('-I', $AnaScript, '--lijst', $list, '--naam', $name, '--doen', ($doen -join ','), '--rapport', "$base.analyse.json")
     if ($formaten -contains 'traktor') { $out.nml = "$base.nml"; $argList += @('--nml', $out.nml) }
+    # Standaard alleen de nieuw geanalyseerde tracks naar Traktor: een import zet
+    # anders de cues en het grid van de hele playlist terug, ook wat je zelf had verschoven.
+    $nieuwNml = "$base (nieuw).nml"
+    if ($out.nml -and -not $task.hele) { $argList += @('--nml-nieuw', $nieuwNml) }
+    elseif (Test-Path -LiteralPath $nieuwNml) { Remove-Item -LiteralPath $nieuwNml -Force }
     if ($formaten -contains 'rekordbox') { $out.rekordbox = "$base (rekordbox).xml"; $argList += @('--rekordbox', $out.rekordbox) }
     # alleen lezen: bij het inladen zou Traktor anders de cover, het genre enz. kwijtraken
     $collectie = Find-TraktorCollection
@@ -2019,10 +2024,11 @@ function Run-Analyse($task) {
     $argList += @('--cache', (Join-Path $ExportDir 'analyse-cache.json'))
     if ($task.opnieuw) { $argList += '--opnieuw' }
 
-    $st = @{ ok = 0; bewaard = 0; fout = 0; onzeker = 0; nalopen = 0 }
+    $st = @{ ok = 0; bewaard = 0; fout = 0; onzeker = 0; nalopen = 0; nieuw = 0 }
     $onLine = {
         param($l)
         try { $m = $l | ConvertFrom-Json } catch { return }
+        if ($m.t -eq 'klaar') { $st.nieuw = [int]$m.nieuw; return }
         $next = if ([int]$m.i -lt $files.Count) { [IO.Path]::GetFileNameWithoutExtension($files[[int]$m.i]) } else { '' }
         if ($m.t -eq 'log') {
             Add-TaskLog $m.msg
@@ -2055,20 +2061,42 @@ function Run-Analyse($task) {
     if ($st.nalopen) { $msg += " Bij $($st.nalopen) staat iets om na te lopen: zie Analyse bij de playlist." }
     $msg += ' Klaar in data\export: ' + ((@($out.Values) | ForEach-Object { [IO.Path]::GetFileName($_) }) -join ' en ') + '.'
     if ($out.nml) {
-        try { $desk = Copy-NmlToDesktop $out.nml; if ($desk) { $msg += " Voor Traktor staat hij ook op je bureaublad: $([IO.Path]::GetFileName($desk))." } }
-        catch { Add-TaskLog "Kon de .nml niet op het bureaublad zetten: $($_.Exception.Message)" }
+        try {
+            if ($task.hele) {
+                $desk = Copy-NmlToDesktop $out.nml
+                if ($desk) { $msg += " Voor Traktor staat de hele playlist op je bureaublad: $([IO.Path]::GetFileName($desk))." }
+            } elseif ($st.nieuw) {
+                $desk = Copy-NmlToDesktop $nieuwNml
+                if ($desk) { $msg += " Voor Traktor staan de $($st.nieuw) nieuwe tracks op je bureaublad: $([IO.Path]::GetFileName($desk)). De rest blijft in Traktor zoals hij is." }
+            } else {
+                Remove-DesktopNml $out.nml     # anders importeer je per ongeluk de vorige keer opnieuw
+                $msg += ' Geen nieuwe tracks, dus niets om in Traktor te importeren.'
+            }
+        } catch { Add-TaskLog "Kon de .nml niet op het bureaublad zetten: $($_.Exception.Message)" }
     }
     Update-Task @{ state = 'klaar'; message = $msg; done = $files.Count; current = ''; files = @($out.Values) } -Force
 }
 
 # Traktor opent zijn importvenster op het bureaublad; daar dus een kopie. Met een
 # eigen achtervoegsel, zodat een eigen bestand met dezelfde naam nooit wordt overschreven.
-function Copy-NmlToDesktop($nml) {
+# "<playlist> (nieuw).nml" komt er ook als "<playlist> (PlaylistFlac).nml" te staan.
+function Get-DesktopNml($nml) {
     $desk = [Environment]::GetFolderPath('Desktop')
     if (-not $desk -or -not (Test-Path -LiteralPath $desk)) { return $null }
-    $dest = Join-Path $desk ([IO.Path]::GetFileNameWithoutExtension($nml) + ' (PlaylistFlac).nml')
+    $stem = [IO.Path]::GetFileNameWithoutExtension($nml) -replace ' \(nieuw\)$', ''
+    return Join-Path $desk ($stem + ' (PlaylistFlac).nml')
+}
+
+function Copy-NmlToDesktop($nml) {
+    $dest = Get-DesktopNml $nml
+    if (-not $dest) { return $null }
     Copy-Item -LiteralPath $nml -Destination $dest -Force
     return $dest
+}
+
+function Remove-DesktopNml($nml) {
+    $dest = Get-DesktopNml $nml
+    if ($dest -and (Test-Path -LiteralPath $dest)) { Remove-Item -LiteralPath $dest -Force }
 }
 
 # --- bijwerken vanaf GitHub -------------------------------------------------
@@ -2524,7 +2552,7 @@ function Handle-Request($ctx, $port) {
             $formaten = @($b.formaten | Where-Object { $AnaFormaten -contains $_ })
             if (-not $doen.Count -or -not $formaten.Count) { throw 'Kies wat je wilt analyseren en voor welke software.' }
             foreach ($i in @($b.indexes)) {
-                Add-ToQueue @{ type = 'analyseren'; index = [int]$i; doen = $doen; formaten = $formaten; opnieuw = [bool]$b.opnieuw }
+                Add-ToQueue @{ type = 'analyseren'; index = [int]$i; doen = $doen; formaten = $formaten; opnieuw = [bool]$b.opnieuw; hele = [bool]$b.hele }
             }
             Send-Json $ctx @{ ok = $true; running = (Task-Running) }
         }
@@ -2689,7 +2717,11 @@ function Sync-Exports {
     # net bijgewerkt? dan ook de kopie op het bureaublad
     if ($script:SyncFile -and $script:SyncProc -and $script:SyncProc.HasExited) {
         $done = $script:SyncFile; $script:SyncFile = $null
-        if ($script:SyncProc.ExitCode -eq 0) { [void](Copy-NmlToDesktop $done) }
+        # met een (nieuw)-bestand ernaast hoort dat op het bureaublad, niet de hele playlist
+        $isNieuw = $done -match ' \(nieuw\)\.nml$'
+        if ($script:SyncProc.ExitCode -eq 0 -and ($isNieuw -or -not (Test-Path -LiteralPath ($done -replace '\.nml$', ' (nieuw).nml')))) {
+            [void](Copy-NmlToDesktop $done)
+        }
     }
     if ($script:SyncAt -and ((Get-Date) - $script:SyncAt).TotalSeconds -lt 15) { return }
     $script:SyncAt = Get-Date
@@ -2701,7 +2733,7 @@ function Sync-Exports {
     if (((Get-Date) - $saved).TotalSeconds -lt 5) { return }       # Traktor is misschien nog aan het schrijven
     $next = Get-ChildItem -LiteralPath $ExportDir -Filter '*.nml' -File | Where-Object {
         $_.LastWriteTime -lt $saved -and $script:SyncTried[$_.FullName] -ne $saved -and
-        (Test-Path -LiteralPath ($_.FullName -replace '\.nml$', '.analyse.json'))
+        (Test-Path -LiteralPath ($_.FullName -replace '( \(nieuw\))?\.nml$', '.analyse.json'))
     } | Select-Object -First 1
     if (-not $next) { return }
     $script:SyncTried[$next.FullName] = $saved

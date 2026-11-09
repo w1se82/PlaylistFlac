@@ -273,8 +273,8 @@ bijgewerkt na elke download en als je de playlist opent.
 *Beta.* Het beatgrid is meestal heel nauwkeurig, maar loop de tracks na voor
 je ermee draait. De cues zijn een vertrekpunt dat je zelf bijschaaft.
 
-**Analyseren & exporteren** (linksonder) zet een playlist klaar voor je
-DJ-software, met:
+**Analyseren & exporteren** (uitklapblok in het scherm van een playlist) zet
+die playlist klaar voor je DJ-software, met:
 
 - **BPM en beatgrid.** De BPM tot op 0,001, het grid op de aanslag van de
   beat. De gridmarker staat op de eerste beat van een frase van 32 beats.
@@ -297,8 +297,14 @@ DJ-software, met:
 Je vinkt aan wat je wilt en voor welke software: Traktor, rekordbox of
 allebei. Het resultaat komt in `data\export`:
 
-- `<playlist>.nml`, voor Traktor; een kopie staat op je bureaublad als
-  `<playlist> (PlaylistFlac).nml`;
+- `<playlist>.nml`, voor Traktor, met de hele playlist;
+- `<playlist> (nieuw).nml`, met alleen de tracks die deze keer geanalyseerd
+  zijn. **Deze** staat op je bureaublad als `<playlist> (PlaylistFlac).nml`, met
+  in Traktor de playlist `<playlist> (nieuw)`. Zo blijven grids en cues die je
+  zelf in Traktor hebt aangepast staan. Wil je toch de hele playlist naar
+  Traktor, vink dan *Hele playlist naar Traktor* aan; dan staat de volledige
+  `.nml` op je bureaublad. Was er niets nieuws, dan haalt hij de oude kopie van
+  je bureaublad weg, zodat je niet per ongeluk de vorige keer opnieuw inlaadt;
 - `<playlist> (rekordbox).xml`, voor rekordbox, met de cues als hot cues én
   memory cues.
 

@@ -451,10 +451,6 @@ h3.sub { font-family: var(--display); font-weight: 700; font-size: 16px; margin:
     <div class="rail-foot">
       <button class="link plus" id="add">Playlist toevoegen</button>
       <div class="foot-btns">
-        <button class="fbtn export" id="rb">
-          <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M12 3l5 5h-3.5v6h-3V8H7l5-5zM4 14h3v4h10v-4h3v7H4z"/></svg>
-          Analyseren &amp; exporteren
-        </button>
         <button class="fbtn quit" id="quit">
           <svg viewBox="0 0 24 24" aria-hidden="true" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round"><path d="M12 3v8"/><path d="M6.3 6.8a8 8 0 1 0 11.4 0"/></svg>
           Afsluiten
@@ -607,9 +603,10 @@ h3.sub { font-family: var(--display); font-weight: 700; font-size: 16px; margin:
   </form>
 </dialog>
 
-<dialog id="dlg-rb" aria-labelledby="rb-title">
-  <form method="dialog">
-    <h2 id="rb-title">Analyseren &amp; exporteren <span class="opt">beta</span></h2>
+<!-- wordt bij elke render in het playlistscherm gehangen (zie placeAnalyse) -->
+<div id="ana-home" hidden>
+  <section id="dlg-rb"><details class="fold" id="ana-fold">
+    <summary id="rb-title">Analyseren &amp; exporteren <span class="opt">beta</span></summary>
     <p class="hint" id="rb-intro">BPM, beatgrid, cues en key per playlist, klaar voor Traktor en rekordbox. Je muziekbestanden worden alleen gelezen, nooit aangepast.</p>
     <p class="keep">Beta: het beatgrid is meestal heel nauwkeurig, maar loop de tracks na voor je ermee draait. De cues zijn een vertrekpunt dat je zelf bijschaaft.</p>
 
@@ -623,15 +620,14 @@ h3.sub { font-family: var(--display); font-weight: 700; font-size: 16px; margin:
 
     <!-- klaar voor gebruik -->
     <section id="ana-form" hidden>
-      <h3 class="sub">Welke playlists?</h3>
-      <div id="ana-lists"></div>
       <h3 class="sub">Wat wil je analyseren?</h3>
       <label class="check"><input type="checkbox" id="ana-grid" checked><span>BPM en beatgrid<small>Het grid begint op de eerste beat van een frase van 32 beats.</small></span></label>
       <label class="check"><input type="checkbox" id="ana-cues" checked><span>Cues<small>Laadpunt, breaks en drops, en uitmixen op 64 en 32 beats voor het einde (de laatste als fade-out). Kan alleen met beatgrid.</small></span></label>
       <label class="check"><input type="checkbox" id="ana-key" checked><span>Key uit de tags<small>Als het bestand al een key heeft, bijvoorbeeld van de winkel of Mixed In Key.</small></span></label>
       <label class="check"><input type="checkbox" id="ana-keyest"><span>Key zelf schatten <span class="opt">nog onbetrouwbaar</span><small>Voor tracks zonder key in de tags. Laat je dit uit, dan bepaalt Traktor of rekordbox de key zelf.</small></span></label>
       <label class="check"><input type="checkbox" id="ana-energy"><span>Energy-kleur<small>Energy 1-10 zoals in de DJ Tool, als kleur van de track: 1-3 blauw, 4-5 violet, 6-7 groen, 8-9 oranje, 10 rood. Staat er al een Mixed In Key-energy in de tags, dan geldt die.</small></span></label>
-      <label class="check"><input type="checkbox" id="ana-opnieuw"><span>Tracks die al geanalyseerd zijn opnieuw doen<small>Staat dit uit, dan slaat hij ze over en analyseert hij alleen nieuwe of veranderde tracks. De .nml bevat altijd de hele playlist.</small></span></label>
+      <label class="check"><input type="checkbox" id="ana-opnieuw"><span>Tracks die al geanalyseerd zijn opnieuw doen<small>Staat dit uit, dan slaat hij ze over en analyseert hij alleen nieuwe of veranderde tracks.</small></span></label>
+      <label class="check"><input type="checkbox" id="ana-hele"><span>Hele playlist naar Traktor<small>Staat dit uit, dan zet hij alleen de tracks die nu geanalyseerd zijn in de .nml op je bureaublad. Zo blijven cues en grids die je zelf in Traktor hebt aangepast staan. Aan: de .nml bevat de hele playlist en een import zet alles terug naar de analyse.</small></span></label>
       <h3 class="sub">Voor welke software?</h3>
       <label class="check"><input type="checkbox" id="ana-traktor" checked><span>Traktor<small>Een playlist (.nml) om te importeren.</small></span></label>
       <label class="check"><input type="checkbox" id="ana-rb" checked><span>rekordbox<small>Een rekordbox.xml, met de cues als hot cues en memory cues.</small></span></label>
@@ -659,11 +655,10 @@ h3.sub { font-family: var(--display); font-weight: 700; font-size: 16px; margin:
     <div class="dlg-foot">
       <button type="button" class="btn quiet" id="rb-traktor" hidden style="margin-right:auto" title="Zonder eigen analyse: neemt de analyse uit je Traktor-collectie mee naar rekordbox">Traktor-collectie → rekordbox</button>
       <button type="button" class="btn quiet" id="rb-reveal">Exportmap openen</button>
-      <button type="submit" class="btn quiet" id="rb-close">Sluiten</button>
       <button type="button" class="btn primary" id="rb-go">Analyseren</button>
     </div>
-  </form>
-</dialog>
+  </details></section>
+</div>
 
 <dialog id="dlg-add" aria-labelledby="add-title">
   <form id="form-add">
@@ -817,7 +812,7 @@ async function boot() {
   try {
     S.app = await api("/api/state");
   } catch {
-    $("#main").innerHTML = `<div class="empty"><h1>PlaylistFlac draait niet</h1><p>Open index.html opnieuw om hem te starten.</p></div>`;
+    rescueAnalyse(), $("#main").innerHTML = `<div class="empty"><h1>PlaylistFlac draait niet</h1><p>Open index.html opnieuw om hem te starten.</p></div>`;
     return;
   }
   renderRail();
@@ -864,12 +859,12 @@ async function openPlaylist(i, refresh = false) {
   if (S.view) S.selByKey[S.view.key] = S.sel;
   S.current = i;
   renderRail();
-  if (!S.view || S.view.index !== i) $("#main").innerHTML = `<div class="empty">${EQ}<h1>Ophalen bij Spotify...</h1></div>`;
+  if (!S.view || S.view.index !== i) rescueAnalyse(), $("#main").innerHTML = `<div class="empty">${EQ}<h1>Ophalen bij Spotify...</h1></div>`;
   try {
     S.view = await api(`/api/playlist?i=${i}${refresh ? "&ververs=1" : ""}`);
   } catch (e) {
     S.view = null;
-    $("#main").innerHTML = `<div class="empty"><h1>Deze playlist lukt niet</h1><p class="error">${esc(e.message)}</p>
+    rescueAnalyse(), $("#main").innerHTML = `<div class="empty"><h1>Deze playlist lukt niet</h1><p class="error">${esc(e.message)}</p>
       <div class="actions"><button class="btn" data-act="retry">Opnieuw proberen</button><button class="btn quiet" data-act="remove">Uit de lijst halen</button></div></div>`;
     $("#bar").hidden = true;
     return;
@@ -943,6 +938,7 @@ function render() {
       <div class="actions" style="margin-bottom:14px"><button class="btn" data-act="search-missing">Deze ${niet.length} opnieuw zoeken</button></div>
       <div class="rows">${niet.map((t) => row(t, "", `<button class="btn quiet" data-act="skip" data-uri="${esc(t.uri)}">Overslaan</button>`)).join("")}</div></section>`;
   }
+  html += `<div id="ana-slot"></div>`;
   html += analyseBlock(v.analyse);
   const binnen = by("binnen");
   if (binnen.length) {
@@ -958,7 +954,8 @@ function render() {
   if (!kiezen.length && !zoeken.length && !niet.length && v.tracks.length) {
     html += `<section><h2>Alles is binnen</h2><p class="hint">Zet je nieuwe nummers op de playlist in Spotify, dan staan ze hier de volgende keer klaar.</p></section>`;
   }
-  $("#main").innerHTML = html;
+  rescueAnalyse(), $("#main").innerHTML = html;
+  placeAnalyse();
   renderTask();
   renderBar();
 }
@@ -1201,7 +1198,7 @@ async function poll() {
     renderTask(); renderBar();
   }
   // venster open terwijl Python of de analyse geinstalleerd wordt: bijwerken
-  if ($("#dlg-rb").open && !(S.app.setup.analyse || {}).installed && !$("#ana-setup").hidden) renderAnalyse();
+  if ($("#ana-fold").open && !(S.app.setup.analyse || {}).installed && !$("#ana-setup").hidden) renderAnalyse();
   S.wasRunning = running;
   S.polling = false;
   S.pollTimer = setTimeout(poll, running ? 700 : S.spWaiting ? 1000 : 4000);
@@ -1317,7 +1314,7 @@ audio.addEventListener("pause", () => { if (playing) { playing.innerHTML = PLAY;
 function renderEmpty() {
   $("#bar").hidden = true;
   const ready = S.app.setup.ready;
-  $("#main").innerHTML = `<div class="empty">${EQ}
+  rescueAnalyse(), $("#main").innerHTML = `<div class="empty">${EQ}
     <h1>${ready ? "Welke playlist gaan we vullen?" : "Eerst even instellen"}</h1>
     <p>${ready ? "Plak de link van een openbare Spotify-playlist. PlaylistFlac zoekt de nummers op Soulseek en laat per nummer zien welke versies er zijn."
                : "Een Soulseek-account en een muziekmap, dan kun je los. Duurt een minuut."}</p>
@@ -1596,20 +1593,24 @@ function renderAnalyse() {
     $("#rb-go").disabled = !a.python || installing;
     return;
   }
-  const lists = S.app.playlists || [];
-  $("#ana-lists").innerHTML = lists.length
-    ? lists.map((p) => `<label class="check"><input type="checkbox" class="ana-pl" value="${p.index}" ${p.index === S.current ? "checked" : ""}><span>${esc(p.name || "playlist")}</span></label>`).join("")
-    : `<p class="hint">Nog geen playlists. Voeg er eerst een toe.</p>`;
-  $("#rb-go").textContent = "Analyseren";
-  $("#rb-go").disabled = !lists.length;
+  $("#rb-go").textContent = "Deze playlist analyseren";
+  $("#rb-go").disabled = false;
 }
 
-function openRekordbox() {
-  anaLoad();
-  renderAnalyse();
-  $("#dlg-rb").showModal();
+// Voor #main opnieuw gevuld wordt: het analyseblok eerst in veiligheid brengen.
+function rescueAnalyse() { $("#ana-home").appendChild($("#dlg-rb")); }
+
+// Het analyseblok is een vast stuk pagina (zodat de vinkjes blijven staan) dat
+// bij elke render onder de playlist komt; zonder playlist terug naar zijn schuilplek.
+function placeAnalyse() {
+  const slot = $("#ana-slot");
+  if (!slot) return;
+  slot.replaceWith($("#dlg-rb"));
+  // de uitkomst van "Traktor-collectie -> rekordbox" laten staan; de rest bijwerken
+  if (!$("#rb-body").innerHTML) renderAnalyse();
 }
-$("#rb").onclick = openRekordbox;
+$("#ana-fold").ontoggle = () => { if ($("#ana-fold").open) { $("#rb-body").innerHTML = ""; renderAnalyse(); } };
+anaLoad();
 // cues kunnen alleen met een beatgrid
 $("#ana-cues").onchange = () => { if ($("#ana-cues").checked) $("#ana-grid").checked = true; anaSave(); };
 $("#ana-grid").onchange = () => { if (!$("#ana-grid").checked) $("#ana-cues").checked = false; anaSave(); };
@@ -1623,21 +1624,19 @@ $("#rb-go").onclick = async () => {
       $("#rb-go").disabled = true;
       S.dismissed = null;
       await api("/api/analyse/install", {});
-      $("#dlg-rb").close();
       S.app = await api("/api/state");
       poll();
       return;
     }
-    const indexes = [...document.querySelectorAll(".ana-pl:checked")].map((x) => +x.value);
+    const indexes = [S.current];
     const doen = [["grid", "grid"], ["cues", "cues"], ["key", "key"], ["keyest", "keyschatting"], ["energy", "energie"]].filter(([id]) => $(`#ana-${id}`).checked).map(([, v]) => v);
     const formaten = [["traktor", "traktor"], ["rb", "rekordbox"]].filter(([id]) => $(`#ana-${id}`).checked).map(([, v]) => v);
-    if (!indexes.length) throw new Error("Kies minstens één playlist.");
     if (!doen.length) throw new Error("Kies wat je wilt analyseren.");
     if (!formaten.length) throw new Error("Kies voor welke software.");
     anaSave();
     $("#rb-go").disabled = true;
-    await enqueue("/api/analyse", { indexes, doen, formaten, opnieuw: $("#ana-opnieuw").checked });
-    $("#dlg-rb").close();
+    await enqueue("/api/analyse", { indexes, doen, formaten, opnieuw: $("#ana-opnieuw").checked, hele: $("#ana-hele").checked });
+    $("#ana-opnieuw").checked = false; $("#ana-hele").checked = false;   // per keer, standaard weer uit
   } catch (err) {
     $("#ana-err").textContent = err.message;
   } finally {
@@ -1673,7 +1672,7 @@ $("#quit").onclick = async () => {
   try { await api("/api/quit", {}); } catch {}
   audio.pause();
   $("#bar").hidden = true;
-  $("#main").innerHTML = `<div class="empty"><h1>PlaylistFlac is gestopt</h1><p>Je kunt dit tabblad sluiten. Opnieuw beginnen: open index.html, of de snelkoppeling op je bureaublad.</p></div>`;
+  rescueAnalyse(), $("#main").innerHTML = `<div class="empty"><h1>PlaylistFlac is gestopt</h1><p>Je kunt dit tabblad sluiten. Opnieuw beginnen: open index.html, of de snelkoppeling op je bureaublad.</p></div>`;
 };
 
 if (location.protocol === "file:") launcher(); else boot();

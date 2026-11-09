@@ -987,6 +987,7 @@ def main():
     ap.add_argument('--check', action='store_true')
     ap.add_argument('--lijst'); ap.add_argument('--naam', default='PlaylistFlac')
     ap.add_argument('--nml'); ap.add_argument('--rekordbox'); ap.add_argument('--rapport')
+    ap.add_argument('--nml-nieuw', help='nog een .nml met alleen de tracks die deze keer geanalyseerd zijn')
     ap.add_argument('--doen', default='grid,cues,key')
     ap.add_argument('--collectie', help='collection.nml van Traktor (alleen lezen): cover, genre enz. overnemen')
     ap.add_argument('--bijwerken', help='een eerder gemaakte .nml bijwerken uit --collectie, zonder analyse')
@@ -1024,6 +1025,7 @@ def main():
         try:
             old = from_cache(cache, p, doen) if (a.cache and not a.opnieuw) else None
             if old is not None:
+                old['_bewaard'] = True
                 rows.append(old)
                 say(t='track', i=i, n=len(files), naam=os.path.basename(p), bewaard=True)
                 continue
@@ -1075,13 +1077,21 @@ def main():
 
     if a.cache:
         save_cache(a.cache, cache)
+    known = read_collection(a.collectie) if (a.nml or a.nml_nieuw) else None
     if a.nml:
-        write_nml(a.nml, a.naam, rows, read_collection(a.collectie))
+        write_nml(a.nml, a.naam, rows, known)
+    nieuw = [r for r in rows if not r.get('_bewaard') and not r.get('fout')]
+    if a.nml_nieuw:
+        # alleen wat net geanalyseerd is: importeren laat je eigen cues bij de rest met rust
+        if nieuw:
+            write_nml(a.nml_nieuw, a.naam + ' (nieuw)', nieuw, known)
+        elif os.path.exists(a.nml_nieuw):
+            os.remove(a.nml_nieuw)
     if a.rekordbox:
         write_rekordbox(a.rekordbox, a.naam, rows)
     if a.rapport:
         write_rapport(a.rapport, a.naam, rows, doen)
-    say(t='klaar', n=len(rows), nml=a.nml, rekordbox=a.rekordbox)
+    say(t='klaar', n=len(rows), nieuw=len(nieuw), nml=a.nml, rekordbox=a.rekordbox)
 
 
 if __name__ == '__main__':
