@@ -192,12 +192,13 @@ function Run-Analyse($task) {
     $msg += ' Klaar in data\export: ' + ((@($out.Values) | ForEach-Object { [IO.Path]::GetFileName($_) }) -join ' en ') + '.'
     if ($out.nml) {
         try {
+            $volgorde = ' Eerst de bestanden in Traktor slepen en Traktor afsluiten, pas daarna importeren (kies dan Playlist).'
             if ($task.hele) {
                 $desk = Copy-NmlToDesktop $out.nml
-                if ($desk) { $msg += " Voor Traktor staat de hele playlist op je bureaublad: $([IO.Path]::GetFileName($desk))." }
+                if ($desk) { $msg += " Voor Traktor staat de hele playlist op je bureaublad: $([IO.Path]::GetFileName($desk))." + $volgorde }
             } elseif ($st.nieuw) {
                 $desk = Copy-NmlToDesktop $nieuwNml
-                if ($desk) { $msg += " Voor Traktor staan de $($st.nieuw) nieuwe tracks op je bureaublad: $([IO.Path]::GetFileName($desk)). De rest blijft in Traktor zoals hij is." }
+                if ($desk) { $msg += " Voor Traktor staan de $($st.nieuw) nieuwe tracks op je bureaublad: $([IO.Path]::GetFileName($desk)). De rest blijft in Traktor zoals hij is." + $volgorde }
             } else {
                 Remove-DesktopNml $out.nml     # anders importeer je per ongeluk de vorige keer opnieuw
                 $msg += ' Geen nieuwe tracks, dus niets om in Traktor te importeren.'

@@ -1,6 +1,6 @@
 # PlaylistFlac
 
-Versie 1.4.0-beta
+Versie 1.4.1-beta
 
 Je Spotify-playlists als mappen met FLAC-bestanden (of mp3 320), gedownload
 via Soulseek.
@@ -12,6 +12,14 @@ alleen de korte radio-versie. Komen er nummers bij op de playlist, dan staan ze
 de volgende keer klaar.
 
 ![PlaylistFlac: per nummer de versies, met een lengtebalk en de Spotify-lengte als cyaan streep](docs/screenshot.png)
+
+## Nieuw in 1.4.1-beta
+
+- **Duidelijker uitleg voor Traktor**: de stappen staan nu in de juiste
+  volgorde. Eerst de bestanden zelf in Traktor slepen, dan Traktor afsluiten
+  zodat hij de collectie opslaat, en pas daarna de `.nml` importeren. Anders
+  raakt Traktor de covers kwijt. Zie [In Traktor](#in-traktor). Ook de melding
+  na een analyse herinnert je aan die volgorde.
 
 ## Nieuw in 1.4.0-beta
 
@@ -361,21 +369,27 @@ verwijder `data\analyse`.
 
 Een `.nml` inladen overschrijft de gegevens van een track in Traktor. Een
 `.nml` kan geen plaatje bevatten, alleen een verwijzing naar de cover die
-Traktor al heeft. De volgorde is dus belangrijk:
+Traktor al heeft. De volgorde is dus belangrijk: eerst de bestanden zelf in
+Traktor, pas daarna de playlist.
 
 0. **Eenmalig:** zet in de voorkeuren van Traktor het schrijven van tags naar
-   bestanden uit. Anders herschrijft Traktor je muziekbestanden bij het inladen
-   en kunnen bijvoorbeeld album en genre verdwijnen.
-1. Sleep de map eerst in Traktor, zodat hij de covers uit de bestanden leest.
-2. Sla de collectie op, of sluit Traktor af. Pas dan staan de covers in het
-   bestand dat PlaylistFlac kan lezen.
-3. Laat PlaylistFlac openstaan, of start hem. Binnen een halve minuut werkt hij
-   de `.nml` vanzelf bij.
-4. Klik in Traktor met rechts op *Playlists* → *Import Playlist* en kies op je
-   bureaublad `<playlist> (PlaylistFlac).nml`.
+   bestanden uit. Anders herschrijft Traktor je muziekbestanden bij het
+   importeren en kunnen bijvoorbeeld album en genre verdwijnen.
+1. **Bestanden inladen:** sleep de map van de playlist in Traktor, op de
+   *Track Collection*. Traktor leest dan de tracks en hun covers uit de
+   bestanden.
+2. **Traktor afsluiten:** dan slaat hij de collectie op. Pas dan staan de
+   covers in het bestand dat PlaylistFlac kan lezen.
+3. **Even wachten:** laat PlaylistFlac openstaan, of start hem. Binnen een
+   halve minuut werkt hij de `.nml` op je bureaublad vanzelf bij.
+4. **Playlist importeren:** start Traktor, klik met rechts op *Playlists* →
+   *Import Playlist* en kies op je bureaublad `<playlist> (PlaylistFlac).nml`.
 5. Vraagt Traktor *File tags may differ from playlist tags*, kies dan
    **Playlist**. Bij File leest hij alleen het bestand en komen de cues en het
    grid niet binnen.
+
+Komen er later tracks bij, doe dan hetzelfde: eerst de nieuwe bestanden in
+Traktor, afsluiten, dan importeren.
 
 Titel, artiest, album en genre komen uit de collectie of anders uit de tags van
 het bestand. Staat een track al in je collectie, dan kan Traktor bij het

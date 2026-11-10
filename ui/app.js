@@ -351,7 +351,7 @@ function analyseBlock(a) {
   };
   const warn = tracks.filter(nalopen), rest = tracks.filter((t) => !nalopen(t));
   return `<section><h2>Analyse <span class="opt">beta</span></h2>
-    <p class="ana-meta">Zet in de voorkeuren van Traktor eerst het schrijven van tags naar bestanden uit, anders herschrijft hij je muziekbestanden. Laad de .nml pas in nadat je de map hebt toegevoegd en Traktor hebt opgeslagen, anders raakt hij de covers kwijt. Kies bij het inladen <b>Playlist</b>, niet File, anders komen de cues niet binnen.</p>
+    <p class="ana-meta">Zet in de voorkeuren van Traktor eerst het schrijven van tags naar bestanden uit, anders herschrijft hij je muziekbestanden. Dan in deze volgorde: eerst de map met bestanden in Traktor slepen, Traktor afsluiten zodat hij de collectie opslaat, en pas daarna de .nml importeren; anders raakt hij de covers kwijt. Kies bij het importeren <b>Playlist</b>, niet File, anders komen de cues niet binnen.</p>
     <p class="ana-meta">Laatste analyse ${esc(a.datum || "")}: ${tracks.length} tracks${warn.length ? `, <b style="color:var(--sun)">${warn.length} om na te lopen</b>` : ", niets bijzonders"}. Geel = even controleren in Traktor of rekordbox, grijs = ter info.</p>
     ${warn.map(one).join("")}
     ${rest.length ? `<details class="fold" ${warn.length ? "" : "open"} style="margin-top:12px"><summary style="font-size:16px">Zonder bijzonderheden <span class="num">${rest.length}</span></summary>${rest.map(one).join("")}</details>` : ""}

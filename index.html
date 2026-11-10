@@ -208,12 +208,16 @@
       <details class="sp-how">
         <summary>Zo haal je het binnen</summary>
         <h3 class="sub">Traktor</h3>
+        <p class="hint">De volgorde maakt uit: eerst de bestanden zelf in Traktor, pas daarna de playlist. Anders raakt Traktor de covers kwijt.</p>
         <ol class="how-to">
-          <li>Klik in de browser van Traktor met rechts op <b>Playlists</b> en kies <b>Import Playlist</b>.</li>
-          <li>Kies op je bureaublad het bestand <code>&lt;playlist&gt; (PlaylistFlac).nml</code>.</li>
+          <li><b>Eenmalig:</b> zet in de voorkeuren van Traktor het schrijven van tags naar bestanden uit. Anders herschrijft Traktor je muziekbestanden bij het importeren.</li>
+          <li><b>Bestanden inladen:</b> sleep de map van de playlist in Traktor, op de <b>Track Collection</b>. Traktor leest dan de tracks en hun covers uit de bestanden.</li>
+          <li><b>Traktor afsluiten:</b> dan slaat hij de collectie op. Pas daarna kan PlaylistFlac de covers zien.</li>
+          <li><b>Even wachten:</b> laat PlaylistFlac openstaan. Binnen een halve minuut werkt hij de .nml op je bureaublad bij.</li>
+          <li><b>Playlist importeren:</b> start Traktor, klik in de browser met rechts op <b>Playlists</b>, kies <b>Import Playlist</b> en kies op je bureaublad <code>&lt;playlist&gt; (PlaylistFlac).nml</code>.</li>
           <li>Vraagt Traktor of hij de tags van de playlist of van het bestand moet nemen ("File tags may differ from playlist tags"), kies dan <b>Playlist</b>. Bij File komen de cues en het grid niet binnen.</li>
         </ol>
-        <p class="keep">Staat een track al in je Traktor-collectie, dan kan Traktor bij het importeren je eigen grid en cues vervangen. Probeer het eerst met nieuwe tracks.</p>
+        <p class="keep">Komen er later tracks bij, doe dan hetzelfde: eerst de nieuwe bestanden in Traktor, afsluiten, dan importeren. Staat een track al in je collectie, dan kan Traktor bij het importeren je eigen grid en cues vervangen; standaard staan daarom alleen de net geanalyseerde tracks in de .nml.</p>
         <h3 class="sub">rekordbox</h3>
         <ol class="how-to">
           <li>Ga naar <b>Voorkeuren → Geavanceerd → Database</b> en kies bij <b>rekordbox xml</b> het <code>.xml</code>-bestand uit <code>data\export</code>.</li>
