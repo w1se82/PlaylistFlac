@@ -1,6 +1,6 @@
 # PlaylistFlac
 
-Versie 1.3.5-beta
+Versie 1.4.0-beta
 
 Je Spotify-playlists als mappen met FLAC-bestanden (of mp3 320), gedownload
 via Soulseek.
@@ -12,6 +12,20 @@ alleen de korte radio-versie. Komen er nummers bij op de playlist, dan staan ze
 de volgende keer klaar.
 
 ![PlaylistFlac: per nummer de versies, met een lengtebalk en de Spotify-lengte als cyaan streep](docs/screenshot.png)
+
+## Nieuw in 1.4.0-beta
+
+- **Uitleg op het moment zelf**: zie je een onderdeel voor het eerst (zoeken,
+  versies kiezen, de lengtebalk, downloaden, niet gevonden, analyseren), dan
+  licht PlaylistFlac het uit met een korte uitleg erbij. Elk onderdeel een
+  keer. Weer allemaal zien: tandwiel, *Uitleg opnieuw*. Helemaal uitzetten kan
+  op het kaartje zelf.
+- **Demo**: open `index.html?demo` in je browser om de interface te proberen
+  met verzonnen playlists, zonder Soulseek. Er wordt niets gedownload.
+- Onder de motorkap opgeruimd: het programma staat in losse onderdelen in
+  `app\lib`, de interface in `ui\`. Voor jou verandert er verder niets.
+- Bij de meldingen in de sectie *Analyse* staat weer een gewoon
+  opsommingsteken in plaats van een onleesbaar teken.
 
 ## Nieuw in 1.3.5-beta
 
@@ -525,15 +539,19 @@ Alle details van de laatste taak staan in `data\status\laatste-run.log`.
 - Alle instellingen staan ook als tekst in `data\instellingen.ini`, met uitleg
   erbij. Daar staat ook `versie-kiezen = uit` voor het oude gedrag: geen keuze,
   sockseek pakt de versie met dezelfde lengte als op Spotify.
+- `app\Start.cmd -Stil` start de interface zonder `playlistflac://`-koppeling,
+  snelkoppeling of browser. Handig om een kopie te testen.
 
 ## Mappen
 
 | map / bestand | |
 |---|---|
-| `index.html` | de interface; openen = starten |
+| `index.html` | de interface; openen = starten. Met `?demo` erachter: proberen met verzonnen playlists |
+| `ui\` | opmaak en scripts van de interface, ook de uitleg per onderdeel (`rondleiding.js`) en de demo (`demo.js`) |
 | `docs\` | de screenshot voor deze README |
 | `release\` | de zips om te delen, een per versie (alleen bij jou, niet in de zip) |
-| `app\` | het programma: `PlaylistFlac.ps1`, `Start.cmd` (Windows), `Start.command` (Mac), de analyse in `app\analyse`, en sockseek in `app\bin` |
+| `tests\` | controles voor wie aan PlaylistFlac werkt: `powershell -File tests\Test-PlaylistFlac.ps1` (niet in de zip) |
+| `app\` | het programma: `PlaylistFlac.ps1` met zijn onderdelen in `app\lib`, `Start.cmd` (Windows), `Start.command` (Mac), de analyse in `app\analyse`, en sockseek in `app\bin` |
 | `PlaylistFlac.app` | alleen op een Mac: het app'je dat de tool start en `playlistflac://` afhandelt; maakt de tool zelf |
 | `data\` | jouw instellingen en status. Niet delen, er staat je wachtwoord in. Een nieuwe versie haal je met de updateknop linksonder; die laat `data\` staan. |
 | `data\export` | de geanalyseerde playlists voor Traktor en rekordbox |
