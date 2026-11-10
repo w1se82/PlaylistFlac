@@ -2714,12 +2714,15 @@ $script:SyncTried = @{}
 $script:SyncFile = $null
 
 function Sync-Exports {
-    # net bijgewerkt? dan ook de kopie op het bureaublad
+    # net bijgewerkt? dan ook de kopie op het bureaublad, maar alleen als die er nog
+    # staat: anders komt na elke keer opslaan in Traktor elke playlist op het bureaublad.
     if ($script:SyncFile -and $script:SyncProc -and $script:SyncProc.HasExited) {
         $done = $script:SyncFile; $script:SyncFile = $null
         # met een (nieuw)-bestand ernaast hoort dat op het bureaublad, niet de hele playlist
         $isNieuw = $done -match ' \(nieuw\)\.nml$'
-        if ($script:SyncProc.ExitCode -eq 0 -and ($isNieuw -or -not (Test-Path -LiteralPath ($done -replace '\.nml$', ' (nieuw).nml')))) {
+        $desk = Get-DesktopNml $done
+        if ($script:SyncProc.ExitCode -eq 0 -and $desk -and (Test-Path -LiteralPath $desk) -and
+            ($isNieuw -or -not (Test-Path -LiteralPath ($done -replace '\.nml$', ' (nieuw).nml')))) {
             [void](Copy-NmlToDesktop $done)
         }
     }
