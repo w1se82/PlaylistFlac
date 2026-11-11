@@ -3,7 +3,7 @@
 
 # --- inpakken -------------------------------------------------------------
 
-# Zip met Unix-rechten erin, zodat Start.command op een Mac na het uitpakken
+# Zip met Unix-rechten erin, zodat Start.command (Mac) en Start.sh (Linux) na het uitpakken
 # uitvoerbaar is (Compress-Archive kan dat niet). Alles onder $stage gaat mee.
 function Write-ReleaseZip($stage, $zip) {
     Add-Type -AssemblyName System.IO.Compression, System.IO.Compression.FileSystem
@@ -18,7 +18,7 @@ function Write-ReleaseZip($stage, $zip) {
             $rel = $f.FullName.Substring($stage.TrimEnd('\').Length + 1) -replace '\\', '/'
             $e = $za.CreateEntry($rel, [IO.Compression.CompressionLevel]::Optimal)
             $e.LastWriteTime = $f.LastWriteTime
-            $e.ExternalAttributes = $(if ($f.Extension -eq '.command') { $exec } else { $plain })
+            $e.ExternalAttributes = $(if ($f.Extension -in '.command', '.sh') { $exec } else { $plain })
             $out = $e.Open(); $in = [IO.File]::OpenRead($f.FullName)
             try { $in.CopyTo($out) } finally { $in.Dispose(); $out.Dispose() }
         }

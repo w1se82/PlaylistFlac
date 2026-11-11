@@ -15,7 +15,7 @@
 # Indeling:
 #   index.html  de interface; los openen start de tool via playlistflac://
 #   ui\         stijl en scripts van de interface (app.css, app.js, rondleiding.js, demo.js)
-#   app\        dit script, Start.cmd, sockseek (app\bin)
+#   app\        dit script, Start.cmd (Windows), Start.command (Mac), Start.sh (Linux), sockseek (app\bin)
 #   app\lib\    de onderdelen van dit script, hieronder op volgorde ingeladen
 #   data\       instellingen.ini en status; blijft staan bij een update van app\
 #   tests\      controles voor de ontwikkelaar (gaan niet mee in de zip)
@@ -29,7 +29,7 @@
 #   -Proef     (met -Console) zoekt en laat de versies zien, downloadt niets
 #   -Inpakken  maakt PlaylistFlac.zip om te delen, zonder jouw wachtwoorden
 #   -Link      gestart via playlistflac:// (index.html); opent zelf geen tabblad
-#   -Afmelden  haalt de playlistflac://-koppeling weer uit Windows
+#   -Afmelden  haalt de playlistflac://-koppeling weer weg (Windows, Mac, Linux)
 #   -Rekordbox maakt data\rekordbox.xml uit de Traktor-collectie (zie Export-Rekordbox)
 #   -Stil      (voor testen) start de webinterface zonder playlistflac://-koppeling,
 #              snelkoppeling of browser
@@ -112,7 +112,7 @@ if ($Inpakken) {
     if (Test-Path $docs) { Copy-Item $docs (Join-Path $pkg 'docs') -Recurse }
     New-Item -ItemType Directory -Force (Join-Path $pkg 'ui') | Out-Null
     Copy-Item (Join-Path $UiDir '*') (Join-Path $pkg 'ui') -Include '*.css', '*.js'
-    Copy-Item (Join-Path $AppDir 'PlaylistFlac.ps1'), (Join-Path $AppDir 'Start.cmd'), (Join-Path $AppDir 'Start.command'), $IniExample (Join-Path $pkg 'app')
+    Copy-Item (Join-Path $AppDir 'PlaylistFlac.ps1'), (Join-Path $AppDir 'Start.cmd'), (Join-Path $AppDir 'Start.command'), (Join-Path $AppDir 'Start.sh'), $IniExample (Join-Path $pkg 'app')
     New-Item -ItemType Directory -Force (Join-Path $pkg 'app\lib') | Out-Null
     foreach ($part in $LibParts) { Copy-Item (Join-Path $LibDir "$part.ps1") (Join-Path $pkg 'app\lib') }
     New-Item -ItemType Directory -Force (Join-Path $pkg 'app\analyse') | Out-Null

@@ -78,7 +78,8 @@ function Run-AnalyseInstall {
     $py = Find-Python
     if (-not $py) {
         if ($OnWin) { throw 'Python niet gevonden. Installeer Python 3 van python.org (vink "Add python.exe to PATH" aan) en probeer het daarna opnieuw.' }
-        throw 'Python niet gevonden. Installeer Python 3.13 van python.org (de macOS-installer) en probeer het daarna opnieuw.'
+        if ($OnMac) { throw 'Python niet gevonden. Installeer Python 3.13 van python.org (de macOS-installer) en probeer het daarna opnieuw.' }
+        throw 'Python 3.10 of nieuwer niet gevonden. Installeer python3 en python3-venv met je pakketbeheer (bijvoorbeeld: sudo apt install python3 python3-venv) en probeer het daarna opnieuw.'
     }
     Add-TaskLog "Python $($py.Version) gevonden: $($py.Path)"
     New-Item -ItemType Directory -Force $AnaDir | Out-Null
@@ -87,7 +88,10 @@ function Run-AnalyseInstall {
     if (-not (Test-Path $AnaPy)) {
         Add-TaskLog 'Eigen Python-omgeving maken in data\analyse'
         $r = Invoke-Logged $py.Path @('-m', 'venv', (Join-Path $AnaDir 'venv')) $pipLog
-        if ($r.Code) { throw "Python-omgeving maken mislukte: $(Last-Lines $r.Err)" }
+        if ($r.Code) {
+            $tip = if (-not $OnWin -and -not $OnMac) { ' Op Linux heb je daarvoor vaak python3-venv nodig (sudo apt install python3-venv).' } else { '' }
+            throw "Python-omgeving maken mislukte: $(Last-Lines $r.Err)$tip"
+        }
     }
     Update-Task @{ done = 1 } -Force
     $pip = @('-m', 'pip', 'install', '--disable-pip-version-check', '--progress-bar', 'off')

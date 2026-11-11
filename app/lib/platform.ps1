@@ -2,7 +2,7 @@
 # Puur ASCII houden: Windows PowerShell 5.1 leest bestanden zonder BOM als ANSI.
 
 # --- Windows of Mac ---------------------------------------------------------
-# (Linux is niet officieel ondersteund, maar handig om te testen.)
+# Linux: start met app/Start.sh; openen gaat via xdg-open.
 
 function Open-Linux($target) {
     if (Get-Command xdg-open -ErrorAction SilentlyContinue) { & xdg-open $target } else { Say "Open zelf: $target" Yellow }
@@ -25,7 +25,7 @@ function Show-File($path) {
 
 # Een tekstbestand openen om te bewerken (Kladblok of TextEdit).
 function Open-Editor($path) {
-    if ($OnWin) { Start-Process notepad.exe $path } elseif ($OnMac) { & open -e $path } else { Say "Open $path in een teksteditor." Yellow }
+    if ($OnWin) { Start-Process notepad.exe $path } elseif ($OnMac) { & open -e $path } else { Open-Linux $path }
 }
 
 # Start dit script nog een keer als apart proces, zonder venster.

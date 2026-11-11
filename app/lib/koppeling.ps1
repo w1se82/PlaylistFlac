@@ -6,12 +6,14 @@
 # Mac: een klein app'je PlaylistFlac.app in de map van PlaylistFlac (gemaakt met
 # osacompile, dat bij macOS hoort) dat playlistflac:// afhandelt; dubbelklikken
 # start de tool ook.
+# Linux: playlistflac.desktop in ~/.local/share/applications (ook in het
+# appmenu), als standaard voor x-scheme-handler/playlistflac via xdg-mime.
 $ProtocolKey = 'HKCU:\Software\Classes\playlistflac'
 $MacApp = Join-Path $Root 'PlaylistFlac.app'
 
 function Register-Protocol {
     if ($OnMac) { Register-MacApp; return }
-    if (-not $OnWin) { return }
+    if (-not $OnWin) { Register-LinuxApp; return }
     $cmd ='powershell.exe -NoProfile -ExecutionPolicy Bypass -WindowStyle Minimized -File "{0}" -Link' -f $MainScript
     $cmdKey = "$ProtocolKey\shell\open\command"
     if ((Test-Path $cmdKey) -and (Get-Item $cmdKey).GetValue('') -eq $cmd) { return }
@@ -60,6 +62,45 @@ function Register-MacApp {
     [IO.File]::WriteAllText($flag, $sig, $Utf8)
 }
 
+# Linux: ~/.local/share/applications/playlistflac.desktop, dat Start.sh start;
+# via playlistflac:// krijgt Start.sh de link mee en maakt er -Link van.
+function Get-LinuxAppDir {
+    $base = if ($env:XDG_DATA_HOME) { $env:XDG_DATA_HOME } else { Join-Path (Join-Path $HOME '.local') 'share' }
+    return Join-Path $base 'applications'
+}
+
+function Register-LinuxApp {
+    $starter = Join-Path $AppDir 'Start.sh'
+    if (-not (Test-Path -LiteralPath $starter)) { return }
+    $sig = "$starter|$Version"
+    $flag = Join-Path $StatusDir 'linux-app.txt'
+    $dir = Get-LinuxAppDir
+    $file = Join-Path $dir 'playlistflac.desktop'
+    if ((Test-Path -LiteralPath $file) -and (Test-Path $flag) -and [IO.File]::ReadAllText($flag, $Utf8).Trim() -eq $sig) { return }
+    & chmod +x $starter
+    # Exec: tussen dubbele aanhalingstekens, met \ voor " ` $ \; daarna nog een
+    # keer elke \ verdubbelen (escape voor het .desktop-bestand) en %% voor %
+    $q = $starter -replace '(["`$\\])', '\$1'
+    $q = $q -replace '\\', '\\' -replace '%', '%%'
+    $exec = '"' + $q + '" %u'
+    $text = @(
+        '[Desktop Entry]'
+        'Type=Application'
+        'Name=PlaylistFlac'
+        'Comment=Spotify-playlists als FLAC via Soulseek'
+        "Exec=$exec"
+        'Icon=audio-x-generic'
+        'Terminal=false'
+        'Categories=AudioVideo;Audio;'
+        'MimeType=x-scheme-handler/playlistflac;'
+    ) -join "`n"
+    New-Item -ItemType Directory -Force $dir | Out-Null
+    [IO.File]::WriteAllText($file, "$text`n", $Utf8)
+    if (Get-Command xdg-mime -ErrorAction SilentlyContinue) { & xdg-mime default playlistflac.desktop x-scheme-handler/playlistflac }
+    if (Get-Command update-desktop-database -ErrorAction SilentlyContinue) { & update-desktop-database $dir 2>$null }
+    [IO.File]::WriteAllText($flag, $sig, $Utf8)
+}
+
 # Eenmalig een snelkoppeling 'PlaylistFlac' op het bureaublad: op Windows naar
 # index.html, op een Mac naar PlaylistFlac.app. Gooi je die weg, dan komt hij
 # niet terug (het vlaggetje in data\status blijft).
@@ -100,5 +141,13 @@ function Unregister-Protocol {
         if (Test-Path $flag) { Remove-Item $flag -Force }
         return
     }
-    if ($OnWin -and (Test-Path $ProtocolKey)) { Remove-Item $ProtocolKey -Recurse -Force }
+    if (-not $OnWin) {
+        $file = Join-Path (Get-LinuxAppDir) 'playlistflac.desktop'
+        if (Test-Path -LiteralPath $file) { Remove-Item -LiteralPath $file -Force }
+        if (Get-Command update-desktop-database -ErrorAction SilentlyContinue) { & update-desktop-database (Get-LinuxAppDir) 2>$null }
+        $flag = Join-Path $StatusDir 'linux-app.txt'
+        if (Test-Path $flag) { Remove-Item $flag -Force }
+        return
+    }
+    if (Test-Path $ProtocolKey) { Remove-Item $ProtocolKey -Recurse -Force }
 }

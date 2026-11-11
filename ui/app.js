@@ -7,7 +7,8 @@ const EQ = '<span class="eq live" aria-hidden="true"><i></i><i></i><i></i><i></i
 const PORTS = Array.from({ length: 10 }, (_, i) => 47821 + i);
 // Mac of Windows: alleen voor de teksten (mappen, starten, Python)
 const MAC = /Mac/i.test(navigator.platform || navigator.userAgent);
-const SEP = MAC ? "/" : "\\";
+const LINUX = !MAC && /Linux/i.test(navigator.platform || navigator.userAgent) && !/Android/i.test(navigator.userAgent);
+const SEP = MAC || LINUX ? "/" : "\\";
 
 /* =====================================================================
    Los geopend (file://): de tool zoeken of starten, dan doorsturen.
@@ -53,7 +54,7 @@ async function launcher() {
     if (port) { location.replace(`http://localhost:${port}/`); return; }
     if (!helped && Date.now() - t0 > 7000) {
       helped = true;
-      show("Gebeurt er niets?", "De allereerste keer kan deze pagina PlaylistFlac nog niet zelf starten. Dubbelklik dan eenmalig op <code>" + (MAC ? "app/Start.command" : "app\\Start.cmd") + "</code> in de map van PlaylistFlac. Daarna start deze pagina hem voortaan vanzelf.", startBtn);
+      show("Gebeurt er niets?", "De allereerste keer kan deze pagina PlaylistFlac nog niet zelf starten. Dubbelklik dan eenmalig op <code>" + (MAC ? "app/Start.command" : LINUX ? "app/Start.sh" : "app\\Start.cmd") + "</code> in de map van PlaylistFlac. Daarna start deze pagina hem voortaan vanzelf.", startBtn);
       $("#go").onclick = go;
     }
   }
@@ -668,7 +669,7 @@ function openSettings() {
   $("#f-user").value = s.user || "";
   $("#f-pass").value = "";
   $("#f-pass").placeholder = s.hasPassword ? "Laat leeg om niet te veranderen" : "";
-  $("#f-dir").value = s.musicDir || (MAC ? "~/Music" : "~\\Music");
+  $("#f-dir").value = s.musicDir || (MAC || LINUX ? "~/Music" : "~\\Music");
   $("#f-flac").checked = s.alleenFlac;
   $("#f-tim").checked = !!s.timSelector; timSync("f");
   $("#f-names").checked = s.netteNamen;
@@ -765,7 +766,7 @@ function openOnboarding() {
   $("#o-user").value = s.user || a.user;
   $("#o-pass").value = s.user ? "" : a.pass;
   $("#o-pass").placeholder = s.hasPassword ? "Laat leeg om niet te veranderen" : "";
-  $("#o-dir").value = s.musicDir || (MAC ? "~/Music" : "~\\Music");
+  $("#o-dir").value = s.musicDir || (MAC || LINUX ? "~/Music" : "~\\Music");
   $("#o-flac").checked = s.alleenFlac;
   $("#o-tim").checked = !!s.timSelector; timSync("o");
   $("#o-names").checked = s.netteNamen;
@@ -905,7 +906,8 @@ function renderAnalyse() {
     $("#ana-steps").innerHTML = a.python
       ? `<li>Python ${esc(a.python)} is gevonden. Mooi.</li>
          <li>Klik <b>Analyse installeren</b>. Dat downloadt ruim 1 GB (vooral PyTorch) en duurt een paar minuten; je ziet het in "Wat er gebeurt".</li>`
-      : `<li>Download Python 3.13 van <b>python.org/downloads</b> en installeer het. ${MAC ? "Kies de macOS-installer." : "Vink in het eerste scherm <b>Add python.exe to PATH</b> aan."}</li>
+      : (LINUX ? `<li>Installeer Python 3 met je pakketbeheer, bijvoorbeeld <code>sudo apt install python3 python3-venv</code>.</li>`
+              : `<li>Download Python 3.13 van <b>python.org/downloads</b> en installeer het. ${MAC ? "Kies de macOS-installer." : "Vink in het eerste scherm <b>Add python.exe to PATH</b> aan."}</li>`) + `
          <li>Kom hier terug: PlaylistFlac ziet vanzelf dat Python er is.</li>
          <li>Klik dan op <b>Analyse installeren</b>.</li>`;
     $("#rb-go").textContent = installing ? "Wordt geïnstalleerd..." : "Analyse installeren";

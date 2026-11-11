@@ -101,7 +101,12 @@ function Install-Update {
         if ($errs) { throw 'De download bevat een fout. Er is niets veranderd.' }
     }
     Install-UpdateFiles $new $work
-    if (-not $OnWin) { & chmod +x (Join-Path $AppDir 'Start.command') }
+    if (-not $OnWin) {
+        foreach ($s in 'Start.command', 'Start.sh') {
+            $f = Join-Path $AppDir $s
+            if (Test-Path -LiteralPath $f) { & chmod +x $f }
+        }
+    }
     Remove-Item -LiteralPath $work -Recurse -Force -ErrorAction SilentlyContinue
     return $latest.Version
 }

@@ -217,6 +217,28 @@ Verschillen met Windows:
 - In plaats van `app\Start.cmd -...` voor de opties hieronder typ je in
   Terminal, in de map `app`: `./Start.command -...`.
 
+### Op Linux
+
+1. **PowerShell 7 installeren** (eenmalig). Op Debian, Ubuntu en Kali:
+   `sudo apt install powershell`; anders zie
+   [deze pagina](https://learn.microsoft.com/powershell/scripting/install/installing-powershell-on-linux).
+2. Pak de zip uit naar een vaste plek, bijv. `~/PlaylistFlac`.
+3. **De allereerste keer:** start in een terminal, in de map `app`:
+   `./Start.sh`. Dat zet **PlaylistFlac** in je appmenu, koppelt
+   `playlistflac://` eraan en opent de interface in je browser. Het
+   terminalvenster is de motor: laat het open.
+4. **Daarna:** start **PlaylistFlac** uit je appmenu, of open `index.html`.
+   Dan draait de motor op de achtergrond; stoppen doe je met **Afsluiten** in
+   de pagina.
+
+Verschillen met Windows:
+
+- Je muziek komt standaard in `~/Music/<playlist>`.
+- Voor *Analyseren & exporteren* heb je Python 3.10 of nieuwer met venv nodig:
+  `sudo apt install python3 python3-venv`.
+- In plaats van `app\Start.cmd -...` voor de opties hieronder typ je in de map
+  `app`: `./Start.sh -...`.
+
 ## Gebruiken
 
 - **Playlist toevoegen** (linksonder): plak de Spotify-link. In Spotify: drie
@@ -528,7 +550,7 @@ wachtwoord en je status) en de 115 MB aan sockseek gaan **niet** mee.
 
 | wat je ziet | wat het is |
 |---|---|
-| index.html blijft op *PlaylistFlac starten...* | de koppeling is er nog niet: dubbelklik eenmalig op `app\Start.cmd` (Mac: `app/Start.command`) |
+| index.html blijft op *PlaylistFlac starten...* | de koppeling is er nog niet: dubbelklik eenmalig op `app\Start.cmd` (Mac: `app/Start.command`, Linux: `app/Start.sh`) |
 | Mac: *Start.command kan niet worden geopend* | zie [Op een Mac](#op-een-mac), stap 3: *Open toch* in Privacy en beveiliging |
 | Mac: Terminal zegt *PowerShell 7 nodig* | installeer PowerShell 7 (stap 1 bij [Op een Mac](#op-een-mac)) en dubbelklik opnieuw |
 | *Kan de Soulseek-server niet bereiken* | geen internet, of het netwerk blokkeert Soulseek (werk, school, soms een VPN) |
@@ -549,7 +571,8 @@ Alle details van de laatste taak staan in `data\status\laatste-run.log`.
   `-Console -Proef` zoekt en laat de versies zien zonder te downloaden.
 - `app\Start.cmd -Afmelden` haalt de `playlistflac://`-koppeling weer uit
   Windows (alleen voor jouw gebruiker; er waren geen adminrechten nodig). Op
-  een Mac haalt `./Start.command -Afmelden` het app'je `PlaylistFlac.app` weg.
+  een Mac haalt `./Start.command -Afmelden` het app'je `PlaylistFlac.app` weg,
+  op Linux haalt `./Start.sh -Afmelden` `playlistflac.desktop` uit je appmenu.
 - Alle instellingen staan ook als tekst in `data\instellingen.ini`, met uitleg
   erbij. Daar staat ook `versie-kiezen = uit` voor het oude gedrag: geen keuze,
   sockseek pakt de versie met dezelfde lengte als op Spotify.
@@ -565,7 +588,7 @@ Alle details van de laatste taak staan in `data\status\laatste-run.log`.
 | `docs\` | de screenshot voor deze README |
 | `release\` | de zips om te delen, een per versie (alleen bij jou, niet in de zip) |
 | `tests\` | controles voor wie aan PlaylistFlac werkt: `powershell -File tests\Test-PlaylistFlac.ps1` (niet in de zip) |
-| `app\` | het programma: `PlaylistFlac.ps1` met zijn onderdelen in `app\lib`, `Start.cmd` (Windows), `Start.command` (Mac), de analyse in `app\analyse`, en sockseek in `app\bin` |
+| `app\` | het programma: `PlaylistFlac.ps1` met zijn onderdelen in `app\lib`, `Start.cmd` (Windows), `Start.command` (Mac), `Start.sh` (Linux), de analyse in `app\analyse`, en sockseek in `app\bin` |
 | `PlaylistFlac.app` | alleen op een Mac: het app'je dat de tool start en `playlistflac://` afhandelt; maakt de tool zelf |
 | `data\` | jouw instellingen en status. Niet delen, er staat je wachtwoord in. Een nieuwe versie haal je met de updateknop linksonder; die laat `data\` staan. |
 | `data\export` | de geanalyseerde playlists voor Traktor en rekordbox |

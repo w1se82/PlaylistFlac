@@ -144,7 +144,8 @@ if ($ZonderServer) {
     # een leeg sockseek-bestand, zodat hij niet 115 MB gaat downloaden
     [IO.File]::WriteAllText((Join-Path $stage 'app\bin\sockseek.exe'), '')
     $ps = (Get-Process -Id $PID).Path
-    $proc = Start-Process $ps -ArgumentList '-NoProfile', '-ExecutionPolicy', 'Bypass', '-File', (Join-Path $stage 'app\PlaylistFlac.ps1'), '-Stil' -PassThru -WindowStyle Hidden
+    $hidden = if ($IsLinux -or $IsMacOS) { @{} } else { @{ WindowStyle = 'Hidden' } }   # -WindowStyle bestaat alleen op Windows
+    $proc = Start-Process $ps -ArgumentList '-NoProfile', '-ExecutionPolicy', 'Bypass', '-File', (Join-Path $stage 'app\PlaylistFlac.ps1'), '-Stil' -PassThru @hidden
     try {
         $base = $null
         for ($i = 0; $i -lt 40 -and -not $base; $i++) {
