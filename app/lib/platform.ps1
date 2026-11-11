@@ -4,8 +4,15 @@
 # --- Windows of Mac ---------------------------------------------------------
 # Linux: start met app/Start.sh; openen gaat via xdg-open.
 
+# Los van dit terminalvenster (setsid, uitvoer weg): anders schrijft een browser
+# die hierdoor start zijn logregels in het venster en gaat hij dicht als je het
+# venster sluit.
 function Open-Linux($target) {
-    if (Get-Command xdg-open -ErrorAction SilentlyContinue) { & xdg-open $target } else { Say "Open zelf: $target" Yellow }
+    if (-not (Get-Command xdg-open -ErrorAction SilentlyContinue)) { Say "Open zelf: $target" Yellow; return }
+    $psi = New-Object Diagnostics.ProcessStartInfo 'sh'
+    foreach ($a in '-c', 'setsid xdg-open "$1" >/dev/null 2>&1 </dev/null &', 'sh', "$target") { $psi.ArgumentList.Add($a) }
+    $psi.UseShellExecute = $false
+    [void][Diagnostics.Process]::Start($psi)
 }
 
 # Een webadres in de standaardbrowser.
