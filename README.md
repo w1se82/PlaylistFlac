@@ -1,6 +1,6 @@
 # PlaylistFlac
 
-Versie 1.4.1-beta
+Versie 1.4.2-beta
 
 Je Spotify-playlists als mappen met FLAC-bestanden (of mp3 320), gedownload
 via Soulseek.
@@ -12,6 +12,12 @@ alleen de korte radio-versie. Komen er nummers bij op de playlist, dan staan ze
 de volgende keer klaar.
 
 ![PlaylistFlac: per nummer de versies, met een lengtebalk en de Spotify-lengte als cyaan streep](docs/screenshot.png)
+
+## Nieuw in 1.4.2-beta
+
+- **Linux**: start PlaylistFlac met `app/Start.sh`. De eerste keer zet hij
+  PlaylistFlac in je appmenu en koppelt hij `playlistflac://`, zodat
+  `index.html` de motor daarna zelf start. Zie [Op Linux](#op-linux).
 
 ## Nieuw in 1.4.1-beta
 
