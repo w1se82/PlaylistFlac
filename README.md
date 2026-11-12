@@ -2,7 +2,7 @@
 
 **English** | [Nederlands](README.nl.md)
 
-Version 1.4.2-beta
+Version 1.5.0-beta
 
 Your Spotify playlists as folders of FLAC files (or mp3 320), downloaded
 through Soulseek.
@@ -18,7 +18,7 @@ they're waiting for you next time.
 The interface is in English and Dutch. By default it follows your browser's
 language; you can change it under the gear icon (*Language*).
 
-## Coming in the next version (not released yet)
+## New in 1.5.0-beta
 
 - **English and Dutch**: the whole interface, the messages and the tips are now
   also in English. By default PlaylistFlac follows your browser's language; you

@@ -2,7 +2,7 @@
 
 [English](README.md) | **Nederlands**
 
-Versie 1.4.2-beta
+Versie 1.5.0-beta
 
 Je Spotify-playlists als mappen met FLAC-bestanden (of mp3 320), gedownload
 via Soulseek.
@@ -15,7 +15,7 @@ de volgende keer klaar.
 
 ![PlaylistFlac: per nummer de versies, met een lengtebalk en de Spotify-lengte als cyaan streep](docs/screenshot.png)
 
-## Nieuw in de volgende versie (nog niet uitgebracht)
+## Nieuw in 1.5.0-beta
 
 - **Nederlands en Engels**: de hele interface, de meldingen en de uitleg zijn
   er nu ook in het Engels. Standaard volgt PlaylistFlac de taal van je browser;
