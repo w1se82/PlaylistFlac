@@ -2,7 +2,8 @@
 const $ = (s) => document.querySelector(s);
 const esc = (s) => String(s ?? "").replace(/[&<>"']/g, (c) => ({ "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;", "'": "&#39;" }[c]));
 const fmt = (sec) => sec ? `${Math.floor(sec / 60)}:${String(sec % 60).padStart(2, "0")}` : "?";
-const plural = (n, one, many) => `${n} ${n === 1 ? one : many}`;
+// enkelvoud of meervoud, in de taal van de interface: plural(3, "bron", "bronnen")
+const plural = (n, one, many) => `${n} ${n === 1 ? t(one) : t(many)}`;
 const EQ = '<span class="eq live" aria-hidden="true"><i></i><i></i><i></i><i></i><i></i></span>';
 const PORTS = Array.from({ length: 10 }, (_, i) => 47821 + i);
 // Mac of Windows: alleen voor de teksten (mappen, starten, Python)
@@ -36,12 +37,12 @@ async function launcher() {
   const show = (title, text, extra = "") => {
     box.innerHTML = `<div class="empty">${EQ}<h1>${title}</h1><p>${text}</p>${extra}</div>`;
   };
-  show("PlaylistFlac zoeken...", "Even kijken of hij al draait.");
+  show(t("PlaylistFlac zoeken..."), t("Even kijken of hij al draait."));
   let port = await findServer();
   if (port) { location.replace(`http://localhost:${port}/`); return; }
 
-  const startBtn = `<div class="actions"><button class="btn primary" id="go">PlaylistFlac starten</button></div>`;
-  show("PlaylistFlac starten...", "Je browser vraagt misschien of hij PlaylistFlac mag openen. Kies Openen; met Altijd toestaan hoeft dat voortaan niet meer.", startBtn);
+  const startBtn = `<div class="actions"><button class="btn primary" id="go">${t("PlaylistFlac starten")}</button></div>`;
+  show(t("PlaylistFlac starten..."), t("Je browser vraagt misschien of hij PlaylistFlac mag openen. Kies Openen; met Altijd toestaan hoeft dat voortaan niet meer."), startBtn);
   const go = () => { location.href = "playlistflac://start"; };
   $("#go").onclick = go;
   go();
@@ -54,7 +55,7 @@ async function launcher() {
     if (port) { location.replace(`http://localhost:${port}/`); return; }
     if (!helped && Date.now() - t0 > 7000) {
       helped = true;
-      show("Gebeurt er niets?", "De allereerste keer kan deze pagina PlaylistFlac nog niet zelf starten. Dubbelklik dan eenmalig op <code>" + (MAC ? "app/Start.command" : LINUX ? "app/Start.sh" : "app\\Start.cmd") + "</code> in de map van PlaylistFlac. Daarna start deze pagina hem voortaan vanzelf.", startBtn);
+      show(t("Gebeurt er niets?"), t("De allereerste keer kan deze pagina PlaylistFlac nog niet zelf starten. Dubbelklik dan eenmalig op <code>{file}</code> in de map van PlaylistFlac. Daarna start deze pagina hem voortaan vanzelf.", { file: MAC ? "app/Start.command" : LINUX ? "app/Start.sh" : "app\\Start.cmd" }), startBtn);
       $("#go").onclick = go;
     }
   }
@@ -92,14 +93,14 @@ const UPD = { latest: null };
 async function checkUpdate(byClick) {
   const b = $("#upd");
   b.disabled = true;
-  if (byClick) b.textContent = "Controleren...";
+  if (byClick) b.textContent = t("Controleren...");
   try {
     const u = await api("/api/update");
     UPD.latest = u.newer ? u.latest : null;
     b.classList.toggle("new", !!u.newer);
-    b.textContent = u.newer ? `Bijwerken naar ${u.latest}` : byClick ? "Je hebt de nieuwste versie" : "Controleren op updates";
+    b.textContent = u.newer ? t("Bijwerken naar {v}", { v: u.latest }) : byClick ? t("Je hebt de nieuwste versie") : t("Controleren op updates");
   } catch {
-    b.textContent = byClick ? "Controleren mislukt, opnieuw?" : "Controleren op updates";
+    b.textContent = byClick ? t("Controleren mislukt, opnieuw?") : t("Controleren op updates");
   }
   b.disabled = false;
 }
@@ -107,7 +108,7 @@ async function installUpdate() {
   const b = $("#upd");
   const from = S.app.version;
   b.disabled = true;
-  b.textContent = "Bijwerken...";
+  b.textContent = t("Bijwerken...");
   try {
     await api("/api/update", {});
   } catch (e) {
@@ -115,7 +116,7 @@ async function installUpdate() {
     b.disabled = false;
     return;
   }
-  b.textContent = "Opnieuw starten...";
+  b.textContent = t("Opnieuw starten...");
   for (let i = 0; i < 60; i++) {
     await new Promise((r) => setTimeout(r, 1000));
     try {
@@ -123,18 +124,23 @@ async function installUpdate() {
       if (st.version !== from) { location.reload(); return; }
     } catch { /* de nieuwe versie start nog */ }
   }
-  b.textContent = "Start PlaylistFlac opnieuw";
+  b.textContent = t("Start PlaylistFlac opnieuw");
 }
 $("#upd").onclick = () => (UPD.latest ? installUpdate() : checkUpdate(true));
 
 async function boot() {
-  $("#app").hidden = false;
   try {
     S.app = await api("/api/state");
   } catch {
-    rescueAnalyse(), $("#main").innerHTML = `<div class="empty"><h1>PlaylistFlac draait niet</h1><p>Open index.html opnieuw om hem te starten.</p></div>`;
+    translateDom();
+    $("#app").hidden = false;
+    rescueAnalyse(), $("#main").innerHTML = `<div class="empty"><h1>${t("PlaylistFlac draait niet")}</h1><p>${t("Open index.html opnieuw om hem te starten.")}</p></div>`;
     return;
   }
+  // de taal die de server kiest (instelling, of die van je browser); dan pas de vaste teksten vertalen
+  setLang(S.app.lang);
+  translateDom();
+  $("#app").hidden = false;
   renderRail();
   checkUpdate(false);
   if (!S.app.setup.ready) { renderEmpty(); openOnboarding(); return; }
@@ -160,8 +166,8 @@ function renderRail() {
   $("#lists").innerHTML = S.app.playlists.map((p) => {
     const n = S.counts[p.index];
     const img = p.cover ? `<img src="${esc(p.cover)}" alt="">` : `<span class="ph" aria-hidden="true">${esc((p.name || "?")[0])}</span>`;
-    const badge = n === undefined ? "" : `<span class="badge ${n ? "" : "zero"}" title="${n} te doen">${n}</span>`;
-    return `<li><button class="pl" data-i="${p.index}" aria-current="${p.index === S.current}">${img}<span class="nm">${esc(p.name || "Laden...")}</span>${badge}</button></li>`;
+    const badge = n === undefined ? "" : `<span class="badge ${n ? "" : "zero"}" title="${t("{n} te doen", { n })}">${n}</span>`;
+    return `<li><button class="pl" data-i="${p.index}" aria-current="${p.index === S.current}">${img}<span class="nm">${esc(p.name || t("Laden..."))}</span>${badge}</button></li>`;
   }).join("");
   const u = S.app.setup.user;
   $("#who").textContent = u ? `Soulseek: ${u}` : "";
@@ -179,13 +185,13 @@ async function openPlaylist(i, refresh = false) {
   if (S.view) S.selByKey[S.view.key] = S.sel;
   S.current = i;
   renderRail();
-  if (!S.view || S.view.index !== i) rescueAnalyse(), $("#main").innerHTML = `<div class="empty">${EQ}<h1>Ophalen bij Spotify...</h1></div>`;
+  if (!S.view || S.view.index !== i) rescueAnalyse(), $("#main").innerHTML = `<div class="empty">${EQ}<h1>${t("Ophalen bij Spotify...")}</h1></div>`;
   try {
     S.view = await api(`/api/playlist?i=${i}${refresh ? "&ververs=1" : ""}`);
   } catch (e) {
     S.view = null;
-    rescueAnalyse(), $("#main").innerHTML = `<div class="empty"><h1>Deze playlist lukt niet</h1><p class="error">${esc(e.message)}</p>
-      <div class="actions"><button class="btn" data-act="retry">Opnieuw proberen</button><button class="btn quiet" data-act="remove">Uit de lijst halen</button></div></div>`;
+    rescueAnalyse(), $("#main").innerHTML = `<div class="empty"><h1>${t("Deze playlist lukt niet")}</h1><p class="error">${esc(e.message)}</p>
+      <div class="actions"><button class="btn" data-act="retry">${t("Opnieuw proberen")}</button><button class="btn quiet" data-act="remove">${t("Uit de lijst halen")}</button></div></div>`;
     $("#bar").hidden = true;
     return;
   }
@@ -212,67 +218,67 @@ function render() {
   const by = (st) => v.tracks.filter((t) => t.status === st);
   const cover = v.cover ? `<img class="cover" src="${esc(v.cover)}" alt="">` : `<div class="cover"></div>`;
   const glow = v.cover ? `<img src="${esc(v.cover)}" alt="">` : "";
-  const stat = (n, label, cls = "") => n ? `<span class="stat ${cls}"><b>${n}</b>${label}</span>` : "";
+  const stat = (n, label, cls = "") => n ? `<span class="stat ${cls}"><b>${n}</b>${t(label)}</span>` : "";
 
   let html = `<div class="stage"><div class="glow" aria-hidden="true">${glow}</div>
     <header class="head">${cover}<div>
       <h1>${esc(v.name)}</h1>
       <div class="stats">
-        <span class="stat"><b>${c.total}</b>op Spotify</span>
+        <span class="stat"><b>${c.total}</b>${t("op Spotify")}</span>
         ${stat(c.binnen, "binnen", "ok")}${stat(c.kiezen, "klaar om te kiezen", "hot")}${stat(c.zoeken, "nog niet gezocht", "hot")}${stat(c.wachtrij, "in de wachtrij", "hot")}
         ${stat(c.nietgevonden, "niet gevonden")}${stat(c.overgeslagen, "overgeslagen")}
       </div>
       ${limitNotice(v)}
       <div class="actions">
-        ${c.zoeken ? `<button class="btn primary" data-act="search-new">${busy ? "In de wachtrij: zoek" : "Zoek"} ${plural(c.zoeken, "nieuw nummer", "nieuwe nummers")}${busy ? "" : " op Soulseek"}</button>` : ""}
-        <button class="btn" data-act="open">Map openen</button>
-        <button class="btn quiet" data-act="refresh">Opnieuw ophalen</button>
-        <button class="btn quiet" data-act="remove">Uit de lijst halen</button>
+        ${c.zoeken ? `<button class="btn primary" data-act="search-new">${t(busy ? "In de wachtrij: zoek {n}" : "Zoek {n} op Soulseek", { n: plural(c.zoeken, "nieuw nummer", "nieuwe nummers") })}</button>` : ""}
+        <button class="btn" data-act="open">${t("Map openen")}</button>
+        <button class="btn quiet" data-act="refresh">${t("Opnieuw ophalen")}</button>
+        <button class="btn quiet" data-act="remove">${t("Uit de lijst halen")}</button>
       </div>
     </div></header></div>
     <div id="task"></div>`;
 
   const wacht = by("wachtrij");
   if (wacht.length) {
-    html += `<section><h2>In de wachtrij <span class="num">${wacht.length}</span></h2>
-      <p class="hint">Deze nummers komen aan de beurt zodra wat ervoor staat klaar is.</p>
-      <div class="rows">${wacht.map((t) => row(t, `<span class="v" style="color:var(--cyan)">${t.versie === "downloaden" ? "wordt gedownload" : "wordt gezocht"}</span>`)).join("")}</div></section>`;
+    html += `<section><h2>${t("In de wachtrij")} <span class="num">${wacht.length}</span></h2>
+      <p class="hint">${t("Deze nummers komen aan de beurt zodra wat ervoor staat klaar is.")}</p>
+      <div class="rows">${wacht.map((x) => row(x, `<span class="v" style="color:var(--cyan)">${t(x.versie === "downloaden" ? "wordt gedownload" : "wordt gezocht")}</span>`)).join("")}</div></section>`;
   }
   const kiezen = by("kiezen");
   if (kiezen.length) {
-    html += `<section><h2>Kies je versies <span class="num">${kiezen.length}</span></h2>
-      <p class="hint">De aanrader staat al aangevinkt. Klik versies aan of uit; meerdere per nummer mag.</p>
-      <div class="legend"><span><i class="k-sel"></i>gekozen</span><span><i class="k-spot"></i>lengte op Spotify</span><span><b class="k-star">&#9733;</b>aanrader</span></div>
+    html += `<section><h2>${t("Kies je versies")} <span class="num">${kiezen.length}</span></h2>
+      <p class="hint">${t("De aanrader staat al aangevinkt. Klik versies aan of uit; meerdere per nummer mag.")}</p>
+      <div class="legend"><span><i class="k-sel"></i>${t("gekozen")}</span><span><i class="k-spot"></i>${t("lengte op Spotify")}</span><span><b class="k-star">&#9733;</b>${t("aanrader")}</span></div>
       ${kiezen.map(trackBlock).join("")}</section>`;
   }
   const zoeken = by("zoeken");
   if (zoeken.length) {
-    html += `<section><h2>Nog niet gezocht <span class="num">${zoeken.length}</span></h2>
-      <p class="hint">Nieuw op de playlist. Zoeken laat per nummer zien welke versies er op Soulseek zijn.</p>
-      <div class="rows">${zoeken.map((t) => row(t)).join("")}</div></section>`;
+    html += `<section><h2>${t("Nog niet gezocht")} <span class="num">${zoeken.length}</span></h2>
+      <p class="hint">${t("Nieuw op de playlist. Zoeken laat per nummer zien welke versies er op Soulseek zijn.")}</p>
+      <div class="rows">${zoeken.map((x) => row(x)).join("")}</div></section>`;
   }
   const niet = by("nietgevonden");
   if (niet.length) {
-    html += `<section><h2>Niet gevonden <span class="num">${niet.length}</span></h2>
-      <p class="hint">Op Soulseek komt en gaat het aanbod met wie er online is. Later opnieuw zoeken levert vaak nog wat op.</p>
-      <div class="actions" style="margin-bottom:14px"><button class="btn" data-act="search-missing">Deze ${niet.length} opnieuw zoeken</button></div>
-      <div class="rows">${niet.map((t) => row(t, "", `<button class="btn quiet" data-act="skip" data-uri="${esc(t.uri)}">Overslaan</button>`)).join("")}</div></section>`;
+    html += `<section><h2>${t("Niet gevonden")} <span class="num">${niet.length}</span></h2>
+      <p class="hint">${t("Op Soulseek komt en gaat het aanbod met wie er online is. Later opnieuw zoeken levert vaak nog wat op.")}</p>
+      <div class="actions" style="margin-bottom:14px"><button class="btn" data-act="search-missing">${niet.length === 1 ? t("Dit nummer opnieuw zoeken") : t("Deze {n} opnieuw zoeken", { n: niet.length })}</button></div>
+      <div class="rows">${niet.map((x) => row(x, "", `<button class="btn quiet" data-act="skip" data-uri="${esc(x.uri)}">${t("Overslaan")}</button>`)).join("")}</div></section>`;
   }
   html += `<div id="ana-slot"></div>`;
   html += analyseBlock(v.analyse);
   const binnen = by("binnen");
   if (binnen.length) {
-    html += `<section><details class="fold"><summary>Binnen <span class="num">${binnen.length}</span></summary>
-      <div class="rows">${binnen.map((t) => row(t, `<span class="v" title="${esc(t.bestand)}">${esc(t.versie)}</span>`,
-        `<button class="btn quiet" data-act="reset" data-uri="${esc(t.uri)}">Opnieuw kiezen</button>`)).join("")}</div></details></section>`;
+    html += `<section><details class="fold"><summary>${t("Binnen")} <span class="num">${binnen.length}</span></summary>
+      <div class="rows">${binnen.map((x) => row(x, `<span class="v" title="${esc(x.bestand)}">${esc(tx(x.versie))}</span>`,
+        `<button class="btn quiet" data-act="reset" data-uri="${esc(x.uri)}">${t("Opnieuw kiezen")}</button>`)).join("")}</div></details></section>`;
   }
   const over = by("overgeslagen");
   if (over.length) {
-    html += `<section><details class="fold skipped"><summary>Overgeslagen <span class="num">${over.length}</span></summary>
-      <div class="rows">${over.map((t) => row(t, "", `<button class="btn quiet" data-act="reset" data-uri="${esc(t.uri)}">Toch kiezen</button>`)).join("")}</div></details></section>`;
+    html += `<section><details class="fold skipped"><summary>${t("Overgeslagen")} <span class="num">${over.length}</span></summary>
+      <div class="rows">${over.map((x) => row(x, "", `<button class="btn quiet" data-act="reset" data-uri="${esc(x.uri)}">${t("Toch kiezen")}</button>`)).join("")}</div></details></section>`;
   }
   if (!kiezen.length && !zoeken.length && !niet.length && v.tracks.length) {
-    html += `<section><h2>Alles is binnen</h2><p class="hint">Zet je nieuwe nummers op de playlist in Spotify, dan staan ze hier de volgende keer klaar.</p></section>`;
+    html += `<section><h2>${t("Alles is binnen")}</h2><p class="hint">${t("Zet je nieuwe nummers op de playlist in Spotify, dan staan ze hier de volgende keer klaar.")}</p></section>`;
   }
   rescueAnalyse(), $("#main").innerHTML = html;
   placeAnalyse();
@@ -285,17 +291,17 @@ function limitNotice(v) {
   if (!v.limited) return "";
   const sp = S.app.setup.spotify || {};
   if (sp.loggedIn) {
-    return `<div class="limit"><p>Je ziet de eerste 100 nummers. ${esc(v.note || "De hele lijst ophalen via je Spotify-account lukte niet.")} Voor de rest: een CSV-export, zie README.md.</p></div>`;
+    return `<div class="limit"><p>${t("Je ziet de eerste 100 nummers. {note} Voor de rest: een CSV-export, zie README.nl.md.", { note: esc(v.note || t("De hele lijst ophalen via je Spotify-account lukte niet.")) })}</p></div>`;
   }
-  return `<div class="limit"><p>Spotify laat zonder koppeling maar de eerste 100 nummers zien. Met een Spotify-koppeling (vereist Premium) haal je de hele playlist op.</p>
-    <button class="btn" data-act="spotify">${sp.app ? "Inloggen met Spotify" : "Spotify koppelen"}</button></div>`;
+  return `<div class="limit"><p>${t("Spotify laat zonder koppeling maar de eerste 100 nummers zien. Met een Spotify-koppeling (vereist Premium) haal je de hele playlist op.")}</p>
+    <button class="btn" data-act="spotify">${t(sp.app ? "Inloggen met Spotify" : "Spotify koppelen")}</button></div>`;
 }
 
 const PLAY = '<svg viewBox="0 0 14 14"><path d="M3 1.5v11l9-5.5z"/></svg>';
 const PAUSE = '<svg viewBox="0 0 14 14"><path d="M3 1.5h3v11H3zM8 1.5h3v11H8z"/></svg>';
 function playBtn(t) {
   return `<button class="play" data-act="play" data-src="${esc(t.preview || "")}" ${t.preview ? "" : "disabled"}
-    aria-pressed="false" aria-label="${t.preview ? "Fragment beluisteren" : "Geen fragment beschikbaar"}">${PLAY}</button>`;
+    aria-pressed="false" aria-label="${tr(t.preview ? "Fragment beluisteren" : "Geen fragment beschikbaar")}">${PLAY}</button>`;
 }
 
 function trackBlock(t) {
@@ -306,11 +312,11 @@ function trackBlock(t) {
     const on = chosen.has(g.label);
     const w = g.length ? (g.length / max) * 100 : 0;
     const tick = t.length ? `<span class="tick" style="left:${(t.length / max) * 100}%"></span>` : "";
-    const src = `${plural(g.sources, "bron", "bronnen")}${g.free ? `, <b>${g.free} vrij</b>` : ""}`;
+    const src = `${plural(g.sources, "bron", "bronnen")}${g.free ? `, <b>${tr("{n} vrij", { n: g.free })}</b>` : ""}`;
     return `<button class="ver ${g.label ? "" : "plain"}" data-act="toggle" data-uri="${esc(t.uri)}" data-label="${esc(g.label)}"
         aria-pressed="${on}" title="${esc(g.example)}">
       <span class="box" aria-hidden="true"></span>
-      <span class="vname">${esc(g.display)}${i === 0 ? `<span class="star" title="aanrader">&#9733;</span>` : ""}</span>
+      <span class="vname">${esc(tx(g.display))}${i === 0 ? `<span class="star" title="${tr("aanrader")}">&#9733;</span>` : ""}</span>
       <span class="lenbar" aria-hidden="true" style="--min:${minPct}%"><span class="slot"><span class="fill" style="width:${w}%"></span></span>${tick}${g.length ? `<span class="cap${t.length && Math.abs(g.length - t.length) <= 3 ? " same" : ""}" style="left:${w}%"></span>` : ""}</span>
       <span class="len">${fmt(g.length)}</span>
       <span class="src">${src}</span>
@@ -320,13 +326,13 @@ function trackBlock(t) {
   return `<article class="track">
     <div class="track-head">${playBtn(t)}
       <div><h3>${esc(t.base)}</h3><div class="by">${esc(t.artists || t.artist)}${t.version ? ` <span class="tag">${esc(t.version)}</span>` : ""}</div></div>
-      <span class="spot" title="Lengte op Spotify">Spotify ${fmt(t.length)}</span>
+      <span class="spot" title="${tr("Lengte op Spotify")}">Spotify ${fmt(t.length)}</span>
     </div>
     <div class="versions">${vers}</div>
     <div class="track-foot">
-      <button class="btn quiet" data-act="none" data-uri="${esc(t.uri)}">Niets aanvinken</button>
-      <button class="btn quiet" data-act="skip" data-uri="${esc(t.uri)}">Overslaan</button>
-      <button class="btn quiet" data-act="research" data-uri="${esc(t.uri)}">Opnieuw zoeken</button>
+      <button class="btn quiet" data-act="none" data-uri="${esc(t.uri)}">${tr("Niets aanvinken")}</button>
+      <button class="btn quiet" data-act="skip" data-uri="${esc(t.uri)}">${tr("Overslaan")}</button>
+      <button class="btn quiet" data-act="research" data-uri="${esc(t.uri)}">${tr("Opnieuw zoeken")}</button>
     </div>
   </article>`;
 }
@@ -344,18 +350,18 @@ function analyseBlock(a) {
     if (t.bpm) f.push(`<b>${Number(t.bpm).toFixed(Math.abs(t.bpm - Math.round(t.bpm)) > 0.001 ? 3 : 0)}</b> BPM`);
     if (t.key) f.push(`key <b>${esc(t.key)}</b>`);
     if (t.energy) f.push(`<span class="ana-dot" style="background:${ANA_KLEUR[t.kleur] || "var(--muted)"}"></span>energy <b>${t.energy}</b>`);
-    if (cues.length) f.push(`<span title="${esc(cues.join(", "))}"><b>${cues.length}</b> cues</span>`);
+    if (cues.length) f.push(`<span title="${esc(cues.map(tx).join(", "))}"><b>${cues.length}</b> cues</span>`);
     return `<div class="ana-row${nalopen(t) ? " warn" : ""}">
       <div class="ana-top"><span class="n" title="${esc(t.bestand)}">${esc(t.bestand.replace(/\.[^.]+$/, ""))}</span>${f.map((x) => `<span class="f">${x}</span>`).join("")}</div>
-      ${notes.length ? `<ul class="ana-notes">${notes.map((n) => `<li class="n${n.niveau}">${esc(n.tekst)}</li>`).join("")}</ul>` : ""}
+      ${notes.length ? `<ul class="ana-notes">${notes.map((n) => `<li class="n${n.niveau}">${esc(tr(n.tekst))}</li>`).join("")}</ul>` : ""}
     </div>`;
   };
   const warn = tracks.filter(nalopen), rest = tracks.filter((t) => !nalopen(t));
-  return `<section><h2>Analyse <span class="opt">beta</span></h2>
-    <p class="ana-meta">Zet in de voorkeuren van Traktor eerst het schrijven van tags naar bestanden uit, anders herschrijft hij je muziekbestanden. Dan in deze volgorde: eerst de map met bestanden in Traktor slepen, Traktor afsluiten zodat hij de collectie opslaat, en pas daarna de .nml importeren; anders raakt hij de covers kwijt. Kies bij het importeren <b>Playlist</b>, niet File, anders komen de cues niet binnen.</p>
-    <p class="ana-meta">Laatste analyse ${esc(a.datum || "")}: ${tracks.length} tracks${warn.length ? `, <b style="color:var(--sun)">${warn.length} om na te lopen</b>` : ", niets bijzonders"}. Geel = even controleren in Traktor of rekordbox, grijs = ter info.</p>
+  return `<section><h2>${t("Analyse")} <span class="opt">beta</span></h2>
+    <p class="ana-meta">${t("Zet in de voorkeuren van Traktor eerst het schrijven van tags naar bestanden uit, anders herschrijft hij je muziekbestanden. Dan in deze volgorde: eerst de map met bestanden in Traktor slepen, Traktor afsluiten zodat hij de collectie opslaat, en pas daarna de .nml importeren; anders raakt hij de covers kwijt. Kies bij het importeren <b>Playlist</b>, niet File, anders komen de cues niet binnen.")}</p>
+    <p class="ana-meta">${t("Laatste analyse {datum}: {n} tracks", { datum: esc(a.datum || ""), n: tracks.length })}${warn.length ? `, <b style="color:var(--sun)">${t("{n} om na te lopen", { n: warn.length })}</b>` : t(", niets bijzonders")}. ${t("Geel = even controleren in Traktor of rekordbox, grijs = ter info.")}</p>
     ${warn.map(one).join("")}
-    ${rest.length ? `<details class="fold" ${warn.length ? "" : "open"} style="margin-top:12px"><summary style="font-size:16px">Zonder bijzonderheden <span class="num">${rest.length}</span></summary>${rest.map(one).join("")}</details>` : ""}
+    ${rest.length ? `<details class="fold" ${warn.length ? "" : "open"} style="margin-top:12px"><summary style="font-size:16px">${t("Zonder bijzonderheden")} <span class="num">${rest.length}</span></summary>${rest.map(one).join("")}</details>` : ""}
   </section>`;
 }
 
@@ -379,13 +385,13 @@ function renderBar() {
   const tracks = Object.values(S.sel).filter((s) => s.size).length;
   bar.hidden = false;
   $("#bar-text").innerHTML = picks.length
-    ? `<b>${picks.length}</b> ${picks.length === 1 ? "bestand" : "bestanden"} van ${plural(tracks, "nummer", "nummers")} aangevinkt`
-    : "Nog niets aangevinkt";
+    ? t("<b>{n}</b> {files} van {tracks} aangevinkt", { n: picks.length, files: t(picks.length === 1 ? "bestand" : "bestanden"), tracks: plural(tracks, "nummer", "nummers") })
+    : t("Nog niets aangevinkt");
   const b = $("#bar-btn");
   // loopt er al iets, dan gaat het achteraan in de wachtrij
   b.textContent = S.app.running || (S.app.queue || []).length
-    ? `In de wachtrij: ${plural(picks.length, "bestand", "bestanden")}`
-    : `Download ${plural(picks.length, "bestand", "bestanden")}`;
+    ? t("In de wachtrij: {n}", { n: plural(picks.length, "bestand", "bestanden") })
+    : t("Download {n}", { n: plural(picks.length, "bestand", "bestanden") });
   b.disabled = !picks.length;
 }
 
@@ -402,22 +408,22 @@ function renderTask() {
   const total = t.total || 0, done = t.done || 0;
   let title, now = "";
   if (t.type === "zoeken") {
-    if (t.phase === "inloggen") title = "Inloggen op Soulseek";
-    else if (t.phase === "zoeken") title = `Zoeken: ${done} van ${total} klaar`;
-    else title = "Verbinden met Soulseek";
-    if (t.current) now = `Nu: ${t.current}`;
+    if (t.phase === "inloggen") title = tr("Inloggen op Soulseek");
+    else if (t.phase === "zoeken") title = tr("Zoeken: {done} van {total} klaar", { done, total });
+    else title = tr("Verbinden met Soulseek");
+    if (t.current) now = tr("Nu: {x}", { x: t.current });
   } else if (t.type === "installeren") {
-    title = `Analyse installeren: stap ${Math.min(total, done + 1)} van ${total}`;
+    title = tr("Analyse installeren: stap {i} van {n}", { i: Math.min(total, done + 1), n: total });
   } else if (t.type === "analyseren") {
-    title = total ? `Analyseren: ${done} van ${total} klaar` : "Analyse voorbereiden";
-    if (t.current) now = `Nu: ${t.current}`;
+    title = total ? tr("Analyseren: {done} van {total} klaar", { done, total }) : tr("Analyse voorbereiden");
+    if (t.current) now = tr("Nu: {x}", { x: t.current });
   } else {
-    title = t.phase === "downloaden" ? `Downloaden: ${done} van ${total} binnen` : "Verbinden met Soulseek";
-    if (t.round > 1) title += `, poging ${t.round}`;
+    title = t.phase === "downloaden" ? tr("Downloaden: {done} van {total} binnen", { done, total }) : tr("Verbinden met Soulseek");
+    if (t.round > 1) title += tr(", poging {n}", { n: t.round });
   }
   const doneTitle = { zoeken: "Zoeken klaar", downloaden: "Downloaden klaar", installeren: "Analyse geïnstalleerd", analyseren: "Analyse klaar" };
-  if (!running) title = t.state === "klaar" ? (doneTitle[t.type] || "Klaar")
-                     : t.state === "gestopt" ? "Gestopt" : "Er ging iets mis";
+  if (!running) title = tr(t.state === "klaar" ? (doneTitle[t.type] || "Klaar")
+                     : t.state === "gestopt" ? "Gestopt" : "Er ging iets mis");
   if (S.view && t.index !== S.view.index && t.name && t.type !== "installeren") title += ` (${t.name})`;
   const pct = total ? Math.round((done / total) * 100) : 0;
   const busyBar = running && !(t.phase === "zoeken" || t.phase === "downloaden" || (t.phase === "analyseren" && total) || t.type === "installeren");
@@ -429,18 +435,20 @@ function renderTask() {
   const follow = !old || old.scrollTop + old.clientHeight >= old.scrollHeight - 12;
   const keep = old ? old.scrollTop : 0;
   const lines = (t.log || []).map((l) => {
-    const cls = /\b(Binnen|Geanalyseerd|Ingelogd|bereikbaar|klaar)\b/.test(l) ? "ok" : /\b(Mislukt|Niet gelukt|niet bereikbaar|gestopt|afgebroken|reageerde)\b/i.test(l) ? "bad" : "";
+    // groen of rood, in beide talen (de server schrijft het log in de taal van de interface)
+    const cls = /\b(Binnen|Geanalyseerd|Ingelogd|bereikbaar|klaar|Done|Analysed|Logged in|reachable|ready)\b/.test(l) ? "ok"
+      : /\b(Mislukt|Niet gelukt|niet bereikbaar|gestopt|afgebroken|reageerde|Failed|not reachable|stopped|aborted|did not respond)\b/i.test(l) ? "bad" : "";
     return cls ? `<span class="${cls}">${esc(l)}</span>` : esc(l);
   }).join("\n");
   const foot = running
-    ? `<span></span><span class="actions">${queue.length ? `<button class="btn quiet" data-act="cancel-all">Alles stoppen</button>` : ""}<button class="btn" data-act="cancel">Stoppen</button></span>`
-    : `<span></span><span class="actions">${t.type === "analyseren" && t.state === "klaar" ? `<button class="btn" data-act="export-dir">Exportmap openen</button>` : ""}<button class="btn quiet" data-act="dismiss">Sluiten</button></span>`;
+    ? `<span></span><span class="actions">${queue.length ? `<button class="btn quiet" data-act="cancel-all">${tr("Alles stoppen")}</button>` : ""}<button class="btn" data-act="cancel">${tr("Stoppen")}</button></span>`
+    : `<span></span><span class="actions">${t.type === "analyseren" && t.state === "klaar" ? `<button class="btn" data-act="export-dir">${tr("Exportmap openen")}</button>` : ""}<button class="btn quiet" data-act="dismiss">${tr("Sluiten")}</button></span>`;
   el.innerHTML = `<div class="task ${running ? "live" : t.state === "klaar" ? "done" : "err"}" role="status">
     <div class="task-top">${running ? EQ : ""}<h2>${esc(title)}</h2><span class="clock" id="clock"></span></div>
     ${running ? `<p class="now">${esc(now)}</p><div class="meter ${busyBar ? "busy" : ""}"><i style="${busyBar ? "" : `width:${pct}%`}"></i></div>${file}`
               : `<p class="msg ${t.state === "fout" ? "error" : ""}">${esc(t.message || "")}</p>`}
-    <p class="log-title">Wat er gebeurt</p>
-    <div class="log" aria-live="off">${lines || "Nog niets."}</div>
+    <p class="log-title">${tr("Wat er gebeurt")}</p>
+    <div class="log" aria-live="off">${lines || tr("Nog niets.")}</div>
     ${queueBlock(queue, running)}
     <div class="task-foot">${foot}</div>
   </div>`;
@@ -452,11 +460,11 @@ function renderTask() {
 function queueBlock(queue, running) {
   if (!queue.length) return "";
   const what = (q) => q.type === "downloaden" ? plural(q.count, "bestand downloaden", "bestanden downloaden")
-    : q.type === "analyseren" ? "analyseren en exporteren" : q.type === "installeren" ? "installeren"
+    : q.type === "analyseren" ? t("analyseren en exporteren") : q.type === "installeren" ? t("installeren")
     : plural(q.count, "nummer zoeken", "nummers zoeken");
-  return `<div class="queue"><p class="log-title">${running ? "Hierna in de wachtrij" : "In de wachtrij"}</p><ol>
-    ${queue.map((q, i) => `<li><span><span class="n">${i + 1}</span><b>${esc(q.name)}</b>: ${what(q)}</span>
-      <button class="btn quiet" data-act="unqueue" data-id="${q.id}">Uit wachtrij</button></li>`).join("")}</ol></div>`;
+  return `<div class="queue"><p class="log-title">${t(running ? "Hierna in de wachtrij" : "In de wachtrij")}</p><ol>
+    ${queue.map((q, i) => `<li><span><span class="n">${i + 1}</span><b>${esc(tx(q.name))}</b>: ${what(q)}</span>
+      <button class="btn quiet" data-act="unqueue" data-id="${q.id}">${t("Uit wachtrij")}</button></li>`).join("")}</ol></div>`;
 }
 
 function tickClock() {
@@ -479,7 +487,7 @@ async function poll() {
   } catch {
     S.polling = false;
     const el = $("#task");
-    if (el) el.innerHTML = `<div class="task err"><div class="task-top"><h2>Geen verbinding met PlaylistFlac</h2></div><p class="msg">Is het venster van PlaylistFlac gesloten? Open index.html opnieuw.</p></div>`;
+    if (el) el.innerHTML = `<div class="task err"><div class="task-top"><h2>${t("Geen verbinding met PlaylistFlac")}</h2></div><p class="msg">${t("Is het venster van PlaylistFlac gesloten? Open index.html opnieuw.")}</p></div>`;
     S.pollTimer = setTimeout(poll, 3000);
     return;
   }
@@ -556,8 +564,8 @@ $("#main").addEventListener("click", async (e) => {
     } else if (act === "refresh" || act === "retry") {
       await openPlaylist(S.current, true);
     } else if (act === "remove") {
-      const name = v ? v.name : "deze playlist";
-      if (!confirm(`${name} uit PlaylistFlac halen? De muziek die al binnen is blijft gewoon staan.`)) return;
+      const name = v ? v.name : t("deze playlist");
+      if (!confirm(t("{name} uit PlaylistFlac halen? De muziek die al binnen is blijft gewoon staan.", { name }))) return;
       await api("/api/playlists/remove", { index: S.current });
       S.view = null; S.app = await api("/api/state"); S.counts = {};
       if (S.app.playlists.length) await openPlaylist(0); else { renderRail(); renderEmpty(); }
@@ -565,7 +573,7 @@ $("#main").addEventListener("click", async (e) => {
       await api("/api/cancel", {});
       poll();
     } else if (act === "cancel-all") {
-      if (!confirm("De huidige taak stoppen en de hele wachtrij leegmaken?")) return;
+      if (!confirm(t("De huidige taak stoppen en de hele wachtrij leegmaken?"))) return;
       await api("/api/cancel", { all: true });
       await openPlaylist(S.current);
       poll();
@@ -635,10 +643,10 @@ function renderEmpty() {
   $("#bar").hidden = true;
   const ready = S.app.setup.ready;
   rescueAnalyse(), $("#main").innerHTML = `<div class="empty">${EQ}
-    <h1>${ready ? "Welke playlist gaan we vullen?" : "Eerst even instellen"}</h1>
-    <p>${ready ? "Plak de link van een openbare Spotify-playlist. PlaylistFlac zoekt de nummers op Soulseek en laat per nummer zien welke versies er zijn."
-               : "Een Soulseek-account en een muziekmap, dan kun je los. Duurt een minuut."}</p>
-    <div class="actions"><button class="btn primary" data-act="${ready ? "add" : "onboard"}">${ready ? "Playlist toevoegen" : "Instellen"}</button></div></div>`;
+    <h1>${t(ready ? "Welke playlist gaan we vullen?" : "Eerst even instellen")}</h1>
+    <p>${t(ready ? "Plak de link van een openbare Spotify-playlist. PlaylistFlac zoekt de nummers op Soulseek en laat per nummer zien welke versies er zijn."
+               : "Een Soulseek-account en een muziekmap, dan kun je los. Duurt een minuut.")}</p>
+    <div class="actions"><button class="btn primary" data-act="${ready ? "add" : "onboard"}">${t(ready ? "Playlist toevoegen" : "Instellen")}</button></div></div>`;
 }
 
 /* ---------- account bedenken / controleren ---------- */
@@ -649,9 +657,9 @@ const newAccount = () => ({
   pass: randomFrom("ABCDEFGHJKLMNPQRSTUVWXYZabcdefghijkmnpqrstuvwxyz23456789", 18),
 });
 function checkAccount(user, pass, hasPassword) {
-  if (!user) return "Vul een Soulseek-naam in, of laat er een bedenken.";
-  if (!pass && !hasPassword) return "Vul een wachtwoord in.";
-  if (/[#\s]/.test(pass)) return "Gebruik in het wachtwoord geen spaties of #.";
+  if (!user) return t("Vul een Soulseek-naam in, of laat er een bedenken.");
+  if (!pass && !hasPassword) return t("Vul een wachtwoord in.");
+  if (/[#\s]/.test(pass)) return t("Gebruik in het wachtwoord geen spaties of #.");
   return "";
 }
 async function afterSettingsSaved() {
@@ -668,15 +676,16 @@ function openSettings() {
   const s = S.app.setup;
   $("#f-user").value = s.user || "";
   $("#f-pass").value = "";
-  $("#f-pass").placeholder = s.hasPassword ? "Laat leeg om niet te veranderen" : "";
+  $("#f-pass").placeholder = s.hasPassword ? t("Laat leeg om niet te veranderen") : "";
   $("#f-dir").value = s.musicDir || (MAC || LINUX ? "~/Music" : "~\\Music");
   $("#f-flac").checked = s.alleenFlac;
   $("#f-tim").checked = !!s.timSelector; timSync("f");
   $("#f-names").checked = s.netteNamen;
   $("#f-pref").value = s.voorkeur || "";
   $("#f-spid").value = ""; $("#f-spsec").value = "";
-  $("#f-spid").placeholder = s.spotify && s.spotify.hasId ? "Ingevuld; laat leeg om niet te veranderen" : "";
-  $("#f-spsec").placeholder = s.spotify && s.spotify.app ? "Ingevuld; laat leeg om niet te veranderen" : "";
+  $("#f-spid").placeholder = s.spotify && s.spotify.hasId ? t("Ingevuld; laat leeg om niet te veranderen") : "";
+  $("#f-spsec").placeholder = s.spotify && s.spotify.app ? t("Ingevuld; laat leeg om niet te veranderen") : "";
+  $("#f-taal").value = s.taal || "auto";
   $("#sp-how").open = !(s.spotify && s.spotify.app);
   renderSpStatus();
   $("#set-err").textContent = "";
@@ -693,15 +702,15 @@ function renderSpStatus() {
   const waiting = login.state === "wachten" && Date.now() - new Date(login.at) < 6 * 60 * 1000;
   let cls = "", text, btn = "";
   if (sp.loggedIn) {
-    cls = "on"; text = `Gekoppeld als <b>${esc(sp.user || "jij")}</b>. Hele playlists worden opgehaald.`;
-    btn = `<button type="button" class="btn quiet" id="sp-logout">Uitloggen</button>`;
+    cls = "on"; text = t("Gekoppeld als <b>{user}</b>. Hele playlists worden opgehaald.", { user: esc(sp.user || t("jij")) });
+    btn = `<button type="button" class="btn quiet" id="sp-logout">${t("Uitloggen")}</button>`;
   } else if (waiting) {
-    cls = "wait"; text = "Wachten op Spotify. Geef in het tabblad dat net openging toestemming.";
+    cls = "wait"; text = t("Wachten op Spotify. Geef in het tabblad dat net openging toestemming.");
   } else if (sp.app) {
-    text = login.state === "fout" ? `<span class="error">${esc(login.message)}</span>` : "Klaar om in te loggen.";
-    btn = `<button type="button" class="btn primary" id="sp-login">Inloggen met Spotify</button>`;
+    text = login.state === "fout" ? `<span class="error">${esc(login.message)}</span>` : t("Klaar om in te loggen.");
+    btn = `<button type="button" class="btn primary" id="sp-login">${t("Inloggen met Spotify")}</button>`;
   } else {
-    text = "Niet gekoppeld. Vul de gegevens van je Spotify-app in en klik Opslaan.";
+    text = t("Niet gekoppeld. Vul de gegevens van je Spotify-app in en klik Opslaan.");
   }
   el.className = `sp-status ${cls}`;
   el.innerHTML = `<span><span class="dot"></span>${text}</span>${btn}`;
@@ -733,15 +742,18 @@ $("#form-settings").addEventListener("submit", async (e) => {
   $("#set-save").disabled = true;
   try {
     const hadApp = S.app.setup.spotify && S.app.setup.spotify.app;
+    const oldTaal = S.app.setup.taal || "auto";
     S.app = await api("/api/settings", {
       user, pass, musicDir: $("#f-dir").value.trim(), alleenFlac: $("#f-flac").checked, timSelector: $("#f-tim").checked,
       netteNamen: $("#f-names").checked, voorkeur: $("#f-pref").value.trim(),
-      spotifyId: $("#f-spid").value.trim(), spotifySecret: $("#f-spsec").value.trim(),
+      spotifyId: $("#f-spid").value.trim(), spotifySecret: $("#f-spsec").value.trim(), taal: $("#f-taal").value,
     });
+    // andere taal: de pagina opnieuw laden, dan staan alle vaste teksten goed
+    if ((S.app.setup.taal || "auto") !== oldTaal) { location.reload(); return; }
     // net een Spotify-app ingevuld? Dan open laten, zodat je meteen kunt inloggen
     if (!hadApp && S.app.setup.spotify.app && !S.app.setup.spotify.loggedIn) {
       $("#f-spid").value = ""; $("#f-spsec").value = "";
-      $("#f-spid").placeholder = $("#f-spsec").placeholder = "Ingevuld; laat leeg om niet te veranderen";
+      $("#f-spid").placeholder = $("#f-spsec").placeholder = t("Ingevuld; laat leeg om niet te veranderen");
       renderSpStatus();
       $("#sp").scrollIntoView({ block: "start" });
       return;
@@ -765,27 +777,29 @@ function openOnboarding() {
   // bestaand account houden; anders staat er een bedacht account klaar
   $("#o-user").value = s.user || a.user;
   $("#o-pass").value = s.user ? "" : a.pass;
-  $("#o-pass").placeholder = s.hasPassword ? "Laat leeg om niet te veranderen" : "";
+  $("#o-pass").placeholder = s.hasPassword ? t("Laat leeg om niet te veranderen") : "";
   $("#o-dir").value = s.musicDir || (MAC || LINUX ? "~/Music" : "~\\Music");
   $("#o-flac").checked = s.alleenFlac;
   $("#o-tim").checked = !!s.timSelector; timSync("o");
   $("#o-names").checked = s.netteNamen;
   $("#o-pref").value = s.voorkeur || "extended, original, club";
   $("#o-src").value = "";
+  document.querySelectorAll(".ob-lang [data-lang]").forEach((b) => b.setAttribute("aria-pressed", b.dataset.lang === LANG));
   showStep(1);
   $("#dlg-onboard").showModal();
 }
 function nextLabel() {
-  if (obStep === 1) return "Beginnen";
-  if (obStep < OB_STEPS) return "Volgende";
-  return $("#o-src").value.trim() ? "Klaar, playlist ophalen" : "Klaar";
+  if (obStep === 1) return t("Beginnen");
+  if (obStep < OB_STEPS) return t("Volgende");
+  return t($("#o-src").value.trim() ? "Klaar, playlist ophalen" : "Klaar");
 }
 function showStep(n) {
   obStep = n;
   document.querySelectorAll("#dlg-onboard .step").forEach((el) => { el.hidden = +el.dataset.step !== n; });
   document.querySelectorAll("#dlg-onboard .steps i").forEach((el, i) => el.classList.toggle("on", i < n));
-  $("#ob-count").textContent = `Stap ${n} van ${OB_STEPS}`;
+  $("#ob-count").textContent = t("Stap {n} van {total}", { n, total: OB_STEPS });
   $("#ob-back").hidden = n === 1;
+  $("#ob-lang").hidden = n !== 1;
   $("#ob-next").textContent = nextLabel();
   $("#ob-err").textContent = ""; $("#ob-err").className = "dlg-err";
   const first = document.querySelector(`#dlg-onboard .step[data-step="${n}"] input`);
@@ -793,6 +807,13 @@ function showStep(n) {
 }
 $("#o-src").addEventListener("input", () => { $("#ob-next").textContent = nextLabel(); });
 $("#o-gen").onclick = () => { const a = newAccount(); $("#o-user").value = a.user; $("#o-pass").value = a.pass; };
+// taal kiezen in de introductie: bewaren en de pagina in die taal opnieuw laden
+document.querySelectorAll(".ob-lang [data-lang]").forEach((b) => {
+  b.onclick = async () => {
+    if (b.dataset.lang === LANG) return;
+    try { await api("/api/settings", { taal: b.dataset.lang }); location.reload(); } catch (err) { $("#ob-err").textContent = err.message; }
+  };
+});
 $("#ob-back").onclick = () => showStep(Math.max(1, obStep - 1));
 // Escape sluit de onboarding alleen als er al een werkende setup is
 $("#dlg-onboard").addEventListener("cancel", (e) => { if (!S.app.setup.ready) e.preventDefault(); });
@@ -802,7 +823,7 @@ $("#form-onboard").addEventListener("submit", async (e) => {
     const problem = checkAccount($("#o-user").value.trim(), $("#o-pass").value.trim(), S.app.setup.hasPassword);
     if (problem) { $("#ob-err").textContent = problem; return; }
   }
-  if (obStep === 3 && !$("#o-dir").value.trim()) { $("#ob-err").textContent = "Vul een muziekmap in."; return; }
+  if (obStep === 3 && !$("#o-dir").value.trim()) { $("#ob-err").textContent = t("Vul een muziekmap in."); return; }
   if (obStep < OB_STEPS) { showStep(obStep + 1); return; }
 
   $("#ob-next").disabled = true;
@@ -814,7 +835,7 @@ $("#form-onboard").addEventListener("submit", async (e) => {
     const src = $("#o-src").value.trim();
     if (src) {
       $("#ob-err").className = "dlg-err info";
-      $("#ob-err").textContent = "Playlist ophalen bij Spotify...";
+      $("#ob-err").textContent = t("Playlist ophalen bij Spotify...");
       const r = await api("/api/playlists/add", { src, name: "" });
       S.app = await api("/api/state");
       $("#dlg-onboard").close();
@@ -845,7 +866,7 @@ $("#form-add").addEventListener("submit", async (e) => {
   e.preventDefault();
   $("#add-save").disabled = true;
   $("#add-err").className = "dlg-err info";
-  $("#add-err").textContent = "Playlist ophalen bij Spotify...";
+  $("#add-err").textContent = t("Playlist ophalen bij Spotify...");
   try {
     const r = await api("/api/playlists/add", { src: $("#a-src").value.trim(), name: $("#a-name").value.trim() });
     S.app = await api("/api/state");
@@ -861,13 +882,14 @@ $("#form-add").addEventListener("submit", async (e) => {
 
 /* ---------- export voor rekordbox ---------- */
 
-const RB_STEPS = `<ol class="how-to">
-  <li>Open rekordbox, ga naar <b>Voorkeuren → Geavanceerd → Database</b> (Preferences → Advanced → Database).</li>
-  <li>Kies bij <b>rekordbox xml</b> het bestand <code>data${SEP}rekordbox.xml</code> in de map van PlaylistFlac.</li>
-  <li>Zet in de voorkeuren bij <b>Weergave → Lay-out</b> (View → Layout) het vinkje bij <b>rekordbox xml</b> aan. Links in de boom verschijnt dan "rekordbox xml".</li>
-  <li>Klik daar met rechts op een playlist of map en kies <b>Importeren</b> (Import Playlist).</li>
+// een functie: de taal is pas bekend als de server geantwoord heeft
+const RB_STEPS = () => `<ol class="how-to">
+  <li>${t("Open rekordbox, ga naar <b>Voorkeuren → Geavanceerd → Database</b> (Preferences → Advanced → Database).")}</li>
+  <li>${t("Kies bij <b>rekordbox xml</b> het bestand <code>{file}</code> in de map van PlaylistFlac.", { file: `data${SEP}rekordbox.xml` })}</li>
+  <li>${t("Zet in de voorkeuren bij <b>Weergave → Lay-out</b> (View → Layout) het vinkje bij <b>rekordbox xml</b> aan. Links in de boom verschijnt dan \"rekordbox xml\".")}</li>
+  <li>${t("Klik daar met rechts op een playlist of map en kies <b>Importeren</b> (Import Playlist).")}</li>
 </ol>
-<p class="keep">Opnieuw exporteren na nieuwe analyses in Traktor mag altijd: rekordbox leest het bestand opnieuw in. Controleer bij een paar mp3's even of het grid klopt.</p>`;
+<p class="keep">${t("Opnieuw exporteren na nieuwe analyses in Traktor mag altijd: rekordbox leest het bestand opnieuw in. Controleer bij een paar mp3's even of het grid klopt.")}</p>`;
 
 /* ---------- Tim Selector ---------- */
 
@@ -904,17 +926,17 @@ function renderAnalyse() {
     const installing = (S.app.task && S.app.task.type === "installeren" && S.app.task.state === "bezig") ||
                        (S.app.queue || []).some((q) => q.type === "installeren");
     $("#ana-steps").innerHTML = a.python
-      ? `<li>Python ${esc(a.python)} is gevonden. Mooi.</li>
-         <li>Klik <b>Analyse installeren</b>. Dat downloadt ruim 1 GB (vooral PyTorch) en duurt een paar minuten; je ziet het in "Wat er gebeurt".</li>`
-      : (LINUX ? `<li>Installeer Python 3 met je pakketbeheer, bijvoorbeeld <code>sudo apt install python3 python3-venv</code>.</li>`
-              : `<li>Download Python 3.13 van <b>python.org/downloads</b> en installeer het. ${MAC ? "Kies de macOS-installer." : "Vink in het eerste scherm <b>Add python.exe to PATH</b> aan."}</li>`) + `
-         <li>Kom hier terug: PlaylistFlac ziet vanzelf dat Python er is.</li>
-         <li>Klik dan op <b>Analyse installeren</b>.</li>`;
-    $("#rb-go").textContent = installing ? "Wordt geïnstalleerd..." : "Analyse installeren";
+      ? `<li>${t("Python {v} is gevonden. Mooi.", { v: esc(a.python) })}</li>
+         <li>${t("Klik <b>Analyse installeren</b>. Dat downloadt ruim 1 GB (vooral PyTorch) en duurt een paar minuten; je ziet het in \"Wat er gebeurt\".")}</li>`
+      : (LINUX ? `<li>${t("Installeer Python 3 met je pakketbeheer, bijvoorbeeld <code>sudo apt install python3 python3-venv</code>.")}</li>`
+              : `<li>${t("Download Python 3.13 van <b>python.org/downloads</b> en installeer het.")} ${t(MAC ? "Kies de macOS-installer." : "Vink in het eerste scherm <b>Add python.exe to PATH</b> aan.")}</li>`) + `
+         <li>${t("Kom hier terug: PlaylistFlac ziet vanzelf dat Python er is.")}</li>
+         <li>${t("Klik dan op <b>Analyse installeren</b>.")}</li>`;
+    $("#rb-go").textContent = t(installing ? "Wordt geïnstalleerd..." : "Analyse installeren");
     $("#rb-go").disabled = !a.python || installing;
     return;
   }
-  $("#rb-go").textContent = "Deze playlist analyseren";
+  $("#rb-go").textContent = t("Deze playlist analyseren");
   $("#rb-go").disabled = false;
 }
 
@@ -952,8 +974,8 @@ $("#rb-go").onclick = async () => {
     const indexes = [S.current];
     const doen = [["grid", "grid"], ["cues", "cues"], ["key", "key"], ["keyest", "keyschatting"], ["energy", "energie"]].filter(([id]) => $(`#ana-${id}`).checked).map(([, v]) => v);
     const formaten = [["traktor", "traktor"], ["rb", "rekordbox"]].filter(([id]) => $(`#ana-${id}`).checked).map(([, v]) => v);
-    if (!doen.length) throw new Error("Kies wat je wilt analyseren.");
-    if (!formaten.length) throw new Error("Kies voor welke software.");
+    if (!doen.length) throw new Error(t("Kies wat je wilt analyseren."));
+    if (!formaten.length) throw new Error(t("Kies voor welke software."));
     anaSave();
     $("#rb-go").disabled = true;
     await enqueue("/api/analyse", { indexes, doen, formaten, opnieuw: $("#ana-opnieuw").checked, hele: $("#ana-hele").checked });
@@ -969,15 +991,15 @@ $("#rb-go").onclick = async () => {
 $("#rb-traktor").onclick = async () => {
   $("#ana-setup").hidden = true; $("#ana-form").hidden = true;
   $("#rb-traktor").disabled = true;
-  $("#rb-body").innerHTML = `<div class="task live"><div class="task-top">${EQ}<h2>Traktor-collectie omzetten...</h2></div><p class="now">Duurt meestal zo'n tien seconden.</p></div>`;
+  $("#rb-body").innerHTML = `<div class="task live"><div class="task-top">${EQ}<h2>${t("Traktor-collectie omzetten...")}</h2></div><p class="now">${t("Duurt meestal zo'n tien seconden.")}</p></div>`;
   try {
     const r = await api("/api/export/rekordbox", {});
-    if (!r.tracks) { $("#rb-body").innerHTML = `<p class="dlg-err">Er is nog niets om te exporteren.</p>`; return; }
-    const parts = [`${r.grids} met beatgrid`, `${r.keys} met key`, `${r.hotcues} hotcues`,
+    if (!r.tracks) { $("#rb-body").innerHTML = `<p class="dlg-err">${t("Er is nog niets om te exporteren.")}</p>`; return; }
+    const parts = [t("{n} met beatgrid", { n: r.grids }), t("{n} met key", { n: r.keys }), `${r.hotcues} hotcues`,
       r.loops ? `${r.loops} loops` : "", `${plural(r.playlists, "playlist", "playlists")}`].filter(Boolean).join(", ");
-    $("#rb-body").innerHTML = `<div class="stats"><span class="stat ok"><b>${r.tracks}</b>tracks uit Traktor klaar voor rekordbox</span></div>
-      <p class="hint">${esc(parts)}. Het bestand is <code>data${SEP}rekordbox.xml</code>.${r.ontbreekt ? ` <span class="warn">${r.ontbreekt} tracks uit Traktor staan niet meer op hun plek en zijn overgeslagen.</span>` : ""}</p>
-      <h3 class="sub">Zo haal je het binnen in rekordbox</h3>${RB_STEPS}`;
+    $("#rb-body").innerHTML = `<div class="stats"><span class="stat ok"><b>${r.tracks}</b>${t("tracks uit Traktor klaar voor rekordbox")}</span></div>
+      <p class="hint">${esc(parts)}. ${t("Het bestand is <code>{file}</code>.", { file: `data${SEP}rekordbox.xml` })}${r.ontbreekt ? ` <span class="warn">${t("{n} tracks uit Traktor staan niet meer op hun plek en zijn overgeslagen.", { n: r.ontbreekt })}</span>` : ""}</p>
+      <h3 class="sub">${t("Zo haal je het binnen in rekordbox")}</h3>${RB_STEPS()}`;
   } catch (err) {
     $("#rb-body").innerHTML = `<p class="dlg-err">${esc(err.message)}</p>`;
   } finally {
@@ -989,11 +1011,11 @@ $("#rb-reveal").onclick = () => api("/api/reveal", { what: "export" }).catch(() 
 /* ---------- afsluiten ---------- */
 
 $("#quit").onclick = async () => {
-  if (S.app && S.app.running && !confirm("Er loopt nog een taak. Toch afsluiten? Die wordt dan gestopt.")) return;
+  if (S.app && S.app.running && !confirm(t("Er loopt nog een taak. Toch afsluiten? Die wordt dan gestopt."))) return;
   try { await api("/api/quit", {}); } catch {}
   audio.pause();
   $("#bar").hidden = true;
-  rescueAnalyse(), $("#main").innerHTML = `<div class="empty"><h1>PlaylistFlac is gestopt</h1><p>Je kunt dit tabblad sluiten. Opnieuw beginnen: open index.html, of de snelkoppeling op je bureaublad.</p></div>`;
+  rescueAnalyse(), $("#main").innerHTML = `<div class="empty"><h1>${t("PlaylistFlac is gestopt")}</h1><p>${t("Je kunt dit tabblad sluiten. Opnieuw beginnen: open index.html, of de snelkoppeling op je bureaublad.")}</p></div>`;
 };
 
 // ?demo laadt eerst ui/demo.js; dat speelt de server na

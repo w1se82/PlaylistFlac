@@ -25,6 +25,8 @@ function Save-Results($h, $key) {
 
 function Run-Task($taskFile) {
     $task = [IO.File]::ReadAllText($taskFile, $Utf8) | ConvertFrom-Json
+    # in de taal van de interface die de taak startte
+    if ($task.lang -in 'nl', 'en') { $script:Lang = $task.lang }
     $script:TaskState = @{
         type = $task.type; index = $task.index; name = ''; state = 'bezig'; phase = 'starten'
         started = (Get-Date).ToString('o'); log = @(); done = 0; total = 0; current = ''; message = ''
@@ -39,14 +41,14 @@ function Run-Task($taskFile) {
         $err = Load-Config
         if ($err) { throw $err }
         if (-not (Test-Path $Exe)) {
-            Add-TaskLog 'sockseek ophalen bij GitHub (eenmalig, ~115 MB)...'
+            Add-TaskLog (L 'sockseek ophalen bij GitHub (eenmalig, ~115 MB)...' 'Fetching sockseek from GitHub (once, ~115 MB)...')
             Install-Sockseek
         }
         Update-Task @{ phase = 'verbinden' } -Force
-        Add-TaskLog 'Verbinden met de Soulseek-server...'
-        if (-not (Test-Soulseek)) { Add-TaskLog 'Soulseek-server niet bereikbaar'; throw $NoSoulseekMsg }
-        Add-TaskLog 'Soulseek-server bereikbaar'
-        Add-TaskLog 'Playlist ophalen bij Spotify'
+        Add-TaskLog (L 'Verbinden met de Soulseek-server...' 'Connecting to the Soulseek server...')
+        if (-not (Test-Soulseek)) { Add-TaskLog (L 'Soulseek-server niet bereikbaar' 'Soulseek server not reachable'); throw (L $NoSoulseekMsg $NoSoulseekMsgEn) }
+        Add-TaskLog (L 'Soulseek-server bereikbaar' 'Soulseek server reachable')
+        Add-TaskLog (L 'Playlist ophalen bij Spotify' 'Fetching playlist from Spotify')
 
         $pl = $cfg['playlists'][[int]$task.index]
         $info = Resolve-Playlist $pl
@@ -56,8 +58,8 @@ function Run-Task($taskFile) {
 
         if ($task.type -eq 'zoeken') {
             $tracks = @($task.uris | ForEach-Object { $byUri[$_] } | Where-Object { $_ })
-            if (-not $tracks.Count) { throw 'Geen nummers om te zoeken.' }
-            Add-TaskLog "$($tracks.Count) nummer(s) zoeken op Soulseek"
+            if (-not $tracks.Count) { throw (L 'Geen nummers om te zoeken.' 'No tracks to search.') }
+            Add-TaskLog (L "$($tracks.Count) nummer(s) zoeken op Soulseek" "Searching $($tracks.Count) track(s) on Soulseek")
             $all = Search-Tracks $tracks $info.Key
             $results = Read-Results $info.Key
             $found = 0
@@ -71,14 +73,14 @@ function Run-Task($taskFile) {
                     })
                 } catch {
                     $groups = @()
-                    Add-TaskLog "Overgeslagen: $($tracks[$i].Artist) - $($tracks[$i].Title): $($_.Exception.Message)"
+                    Add-TaskLog ((L 'Overgeslagen' 'Skipped') + ": $($tracks[$i].Artist) - $($tracks[$i].Title): $($_.Exception.Message)")
                 }
                 if ($groups.Count) { $found++ }
                 $results[$tracks[$i].Uri] = @{ at = (Get-Date).ToString('o'); groups = $groups }
             }
             Save-Results $results $info.Key
-            $msg = "$found van $($tracks.Count) gevonden. Kies nu de versies."
-            if ($found -lt $tracks.Count) { $msg = "$found van $($tracks.Count) gevonden; de rest staat onder Niet gevonden." }
+            $msg = L "$found van $($tracks.Count) gevonden. Kies nu de versies." "Found $found of $($tracks.Count). Now choose the versions."
+            if ($found -lt $tracks.Count) { $msg = L "$found van $($tracks.Count) gevonden; de rest staat onder Niet gevonden." "Found $found of $($tracks.Count); the rest is under Not found." }
             Update-Task @{ state = 'klaar'; message = $msg } -Force
         } else {
             $results = Read-Results $info.Key
@@ -92,14 +94,14 @@ function Run-Task($taskFile) {
                 @{ Track = $t; Group = $g; Candidates = @($g.candidates); File = $null
                    Title = "{0} - {1}{2}" -f $t.Artist, (Split-Title $t.Title).Base, $suffix }
             })
-            if (-not $picks.Count) { throw 'Niets om te downloaden; zoek eerst opnieuw.' }
+            if (-not $picks.Count) { throw (L 'Niets om te downloaden; zoek eerst opnieuw.' 'Nothing to download; search again first.') }
             $outDir = Join-Path $MusicDir (Safe-FileName $info.Name)
-            Add-TaskLog "$($picks.Count) bestand(en) downloaden naar $outDir"
+            Add-TaskLog (L "$($picks.Count) bestand(en) downloaden naar $outDir" "Downloading $($picks.Count) file(s) to $outDir")
             Download-Picks $picks $tmp
             $ok = Save-Picks $picks $outDir (Join-Path $StatusDir "$($info.Key).keuzes.json")
             [void](Write-PlaylistM3u $info $outDir)
-            $msg = "$ok van $($picks.Count) bestand(en) binnen."
-            if ($ok -lt $picks.Count) { $msg += ' De rest had geen bereikbare bron; probeer het later nog eens.' }
+            $msg = L "$ok van $($picks.Count) bestand(en) binnen." "$ok of $($picks.Count) file(s) downloaded."
+            if ($ok -lt $picks.Count) { $msg += L ' De rest had geen bereikbare bron; probeer het later nog eens.' ' The rest had no reachable source; try again later.' }
             Update-Task @{ state = 'klaar'; message = $msg; done = $ok } -Force
         }
     } catch {

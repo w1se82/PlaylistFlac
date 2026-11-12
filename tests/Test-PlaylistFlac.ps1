@@ -60,6 +60,35 @@ try {
     function Say($text, $color = 'Gray') { }
     foreach ($part in $parts) { . (Join-Path $LibDir "$part.ps1") }
 
+    # taal: L kiest, Resolve-Lang volgt instelling > browser
+    $script:Lang = 'en'; Check 'L en' (L 'ja' 'yes') 'yes'
+    $script:Lang = 'nl'; Check 'L nl' (L 'ja' 'yes') 'ja'
+    $fakeReq = { param($al) [pscustomobject]@{ Headers = @{ 'Accept-Language' = $al } } }
+    $script:cfg = @{ taal = 'auto' }
+    Check 'Resolve-Lang browser nl' (Resolve-Lang (& $fakeReq 'nl-NL,nl;q=0.9,en;q=0.8')) 'nl'
+    Check 'Resolve-Lang browser en' (Resolve-Lang (& $fakeReq 'en-GB,en;q=0.9')) 'en'
+    $script:cfg = @{ taal = 'nl' }
+    Check 'Resolve-Lang instelling' (Resolve-Lang (& $fakeReq 'en-US')) 'nl'
+    $script:cfg = $null
+
+    # elke t("...") in de interface heeft Engels in ui\lang-en.js
+    $uiDir = Join-Path $Project 'ui'
+    $langText = [IO.File]::ReadAllText((Join-Path $uiDir 'lang-en.js'))
+    $enKeys = @{}
+    foreach ($m in [regex]::Matches($langText, '(?m)^\s*"((?:[^"\\]|\\.)*)":')) { $enKeys[$m.Groups[1].Value] = $true }
+    $missing = @()
+    foreach ($f in 'app.js', 'rondleiding.js', 'demo.js') {
+        $js = [IO.File]::ReadAllText((Join-Path $uiDir $f))
+        foreach ($m in [regex]::Matches($js, '\b(?:t|tr)\("((?:[^"\\]|\\.)*)"')) {
+            $k = $m.Groups[1].Value
+            if ($k -match '[a-z]' -and -not $enKeys.ContainsKey($k)) { $missing += "$f`: $k" }
+        }
+        foreach ($m in [regex]::Matches($js, '(?:title|text): "((?:[^"\\]|\\.)*)"')) {
+            if ($f -eq 'rondleiding.js' -and -not $enKeys.ContainsKey($m.Groups[1].Value)) { $missing += "$f`: $($m.Groups[1].Value)" }
+        }
+    }
+    Check 'Engels voor elke t()' ($missing -join ' | ') ''
+
     # bestandsnamen van Soulseek, ook met tekens die [IO.Path] in PS 5.1 weigert
     Check 'RemoteStem quote' (Get-RemoteStem '@@user\Music\Artist - "Title" (Extended Mix).flac') 'Artist - "Title" (Extended Mix)'
     Check 'RemoteExt pipe' (Get-RemoteExt 'C:/a|b/Track | Edit.mp3') '.mp3'
@@ -115,17 +144,20 @@ try {
 
 # --- 3. de webinterface starten vanuit een kopie ------------------------------
 
-function Get-Url($url) {
+function Get-Url($url, $lang) {
     $req = [Net.WebRequest]::Create($url); $req.Timeout = 5000
+    if ($lang) { $req.Headers['Accept-Language'] = $lang }
     try { $res = $req.GetResponse() } catch [Net.WebException] { $res = $_.Exception.Response; if (-not $res) { throw } }
     $sr = New-Object IO.StreamReader($res.GetResponseStream())
     $o = @{ Code = [int]$res.StatusCode; Type = $res.ContentType; Body = $sr.ReadToEnd() }
     $res.Close(); return $o
 }
-function Post-Json($url, $json) {
+function Post-Json($url, $json, $lang) {
     $req = [Net.WebRequest]::Create($url); $req.Method = 'POST'; $req.ContentType = 'application/json'; $req.Timeout = 5000
+    if ($lang) { $req.Headers['Accept-Language'] = $lang }
     $b = [Text.Encoding]::UTF8.GetBytes($json); $s = $req.GetRequestStream(); $s.Write($b, 0, $b.Length); $s.Close()
-    $res = $req.GetResponse(); $sr = New-Object IO.StreamReader($res.GetResponseStream()); $t = $sr.ReadToEnd(); $res.Close(); return $t
+    try { $res = $req.GetResponse() } catch [Net.WebException] { $res = $_.Exception.Response; if (-not $res) { throw } }
+    $sr = New-Object IO.StreamReader($res.GetResponseStream()); $t = $sr.ReadToEnd(); $res.Close(); return $t
 }
 
 $busy = $false
@@ -142,7 +174,8 @@ if ($ZonderServer) {
     Copy-Item (Join-Path $AppSrc 'PlaylistFlac.ps1'), (Join-Path $AppSrc 'instellingen.voorbeeld.ini') (Join-Path $stage 'app')
     Copy-Item (Join-Path $AppSrc 'lib') (Join-Path $stage 'app\lib') -Recurse
     # een leeg sockseek-bestand, zodat hij niet 115 MB gaat downloaden
-    [IO.File]::WriteAllText((Join-Path $stage 'app\bin\sockseek.exe'), '')
+    # (sockseek.exe op Windows, sockseek op Mac en Linux)
+    foreach ($n in 'sockseek.exe', 'sockseek') { [IO.File]::WriteAllText((Join-Path (Join-Path (Join-Path $stage 'app') 'bin') $n), '') }
     $ps = (Get-Process -Id $PID).Path
     $hidden = if ($IsLinux -or $IsMacOS) { @{} } else { @{ WindowStyle = 'Hidden' } }   # -WindowStyle bestaat alleen op Windows
     $proc = Start-Process $ps -ArgumentList '-NoProfile', '-ExecutionPolicy', 'Bypass', '-File', (Join-Path $stage 'app\PlaylistFlac.ps1'), '-Stil' -PassThru @hidden
@@ -156,7 +189,7 @@ if ($ZonderServer) {
         if ($base) {
             $r = Get-Url "$base/"
             Check 'GET /' "$($r.Code) $($r.Body -match 'ui/app.js')" '200 True'
-            foreach ($f in 'app.css', 'app.js', 'rondleiding.js') {
+            foreach ($f in 'app.css', 'app.js', 'rondleiding.js', 'i18n.js', 'lang-en.js') {
                 $r = Get-Url "$base/ui/$f"
                 Check "GET /ui/$f" $r.Code 200
             }
@@ -169,6 +202,15 @@ if ($ZonderServer) {
             Check 'POST rondleiding' (@($t.seen) -join ',') 'kies-versie'
             $st = (Get-Url "$base/api/state").Body | ConvertFrom-Json
             Check 'rondleiding bewaard' (@($st.rondleiding.seen) -join ',') 'kies-versie'
+            # taal per verzoek: de browser zegt Engels of Nederlands
+            Check 'state lang en' ((Get-Url "$base/api/state" 'en-US,en;q=0.9').Body | ConvertFrom-Json).lang 'en'
+            Check 'state lang nl' ((Get-Url "$base/api/state" 'nl-NL,nl').Body | ConvertFrom-Json).lang 'nl'
+            Check 'fout in het Engels' ((Post-Json "$base/api/playlists/add" '{"src":""}' 'en-US') | ConvertFrom-Json).error 'Paste a Spotify link first.'
+            Check 'fout in het Nederlands' ((Post-Json "$base/api/playlists/add" '{"src":""}' 'nl') | ConvertFrom-Json).error 'Plak eerst een Spotify-link.'
+            # de instelling wint van de browser
+            [void](Post-Json "$base/api/settings" '{"taal":"nl"}' 'en-US')
+            $st = (Get-Url "$base/api/state" 'en-US').Body | ConvertFrom-Json
+            Check 'instelling taal' "$($st.lang) $($st.setup.taal)" 'nl nl'
             [void](Post-Json "$base/api/quit" '{}')
         }
         [void]$proc.WaitForExit(8000)

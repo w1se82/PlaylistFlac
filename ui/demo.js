@@ -7,11 +7,14 @@
      ?demo            een playlist halverwege: kiezen, zoeken, niet gevonden, binnen
      ?demo=nieuw      net toegevoegd: alles moet nog gezocht worden
      ?demo=instellen  eerste keer: de introductie
+     &lang=en / &lang=nl  in die taal (anders die van je browser)
    Handig om de rondleiding te testen; die begint elke keer opnieuw.
    ===================================================================== */
 
 (() => {
-  const scenario = new URLSearchParams(location.search).get("demo") || "";
+  const params = new URLSearchParams(location.search);
+  const scenario = params.get("demo") || "";
+  let taal = ["nl", "en"].includes(params.get("lang")) ? params.get("lang") : "auto";
   const cover = (a, b) => "data:image/svg+xml," + encodeURIComponent(
     `<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 10 10"><defs><linearGradient id="g" x1="0" y1="0" x2="1" y2="1"><stop offset="0" stop-color="${a}"/><stop offset="1" stop-color="${b}"/></linearGradient></defs><rect width="10" height="10" fill="url(#g)"/></svg>`);
 
@@ -69,6 +72,7 @@
       analyse: { installed: false, python: "3.13.1", exportDir: "C:\\demo\\data\\export" },
     },
     version: "demo",
+    lang: taal === "auto" ? LANG : taal,
     task: null, running: false, queue: [],
     rondleiding: { seen: [], off: false },
   };
@@ -88,6 +92,7 @@
   };
   const state = () => ({
     ...st,
+    setup: { ...st.setup, taal },
     playlists: lists.map((l, i) => ({ index: i, src: l.src, name: l.name, cover: l.cover })),
     rondleiding: { seen: [...st.rondleiding.seen], off: st.rondleiding.off },
   });
@@ -112,7 +117,7 @@
       if (st.task.done >= st.task.total) {
         clearInterval(timer);
         st.task.state = "klaar"; st.running = false; st.task.current = "";
-        st.task.message = type === "zoeken" ? `${items.length} nummers gezocht.` : `${items.length} bestanden binnen.`;
+        st.task.message = tr(type === "zoeken" ? "{n} nummers gezocht." : "{n} bestanden binnen.", { n: items.length });
       }
     }, 700);
   }
@@ -135,6 +140,13 @@
       if (b.musicDir) s.musicDir = b.musicDir;
       for (const k of ["alleenFlac", "timSelector", "netteNamen"]) if (k in b) s[k] = !!b[k];
       if (b.voorkeur) s.voorkeur = b.voorkeur;
+      // een andere taal: de pagina laadt opnieuw, dus via de link onthouden
+      if (b.taal && b.taal !== taal) {
+        taal = b.taal;
+        const u = new URL(location.href);
+        if (taal === "auto") u.searchParams.delete("lang"); else u.searchParams.set("lang", taal);
+        history.replaceState(null, "", u);
+      }
       s.ready = !!(s.user && s.hasPassword); s.problem = s.ready ? null : "Nog niet ingesteld.";
       return state();
     },
@@ -146,9 +158,9 @@
     "POST /api/search": (b) => {
       runTask("zoeken", +b.index, b.uris, (t) => {
         const i = SONGS.findIndex((s) => s[1] === t.title);
-        if (SONGS[i][3] === "niets") { t.status = "nietgevonden"; t.groups = []; return `Niet gevonden: ${t.artist} - ${t.title}`; }
+        if (SONGS[i][3] === "niets") { t.status = "nietgevonden"; t.groups = []; return tr("Niet gevonden: {x}", { x: `${t.artist} - ${t.title}` }); }
         t.status = "kiezen"; t.groups = groupsFor(i, t.length);
-        return `${t.artist} - ${t.title}: ${t.groups.length} versies`;
+        return tr("{x}: {n} versies", { x: `${t.artist} - ${t.title}`, n: t.groups.length });
       });
       return { ok: true };
     },
@@ -158,7 +170,7 @@
       runTask("downloaden", +b.index, items, (t, p) => {
         const g = t.groups.find((x) => x.label === p.label) || t.groups[0];
         t.status = "binnen"; t.versie = g.display; t.bestand = g.example; t.groups = [];
-        return `Binnen: ${g.example}`;
+        return tr("Binnen: {x}", { x: g.example });
       });
       return { ok: true };
     },
@@ -172,7 +184,7 @@
       clearInterval(timer);
       if (st.task && st.task.state === "bezig") {
         for (const l of lists) for (const t of l.tracks) if (t.status === "wachtrij") t.status = t._was;
-        st.task.state = "gestopt"; st.task.message = "Gestopt."; st.running = false;
+        st.task.state = "gestopt"; st.task.message = t("Gestopt."); st.running = false;
       }
       return { ok: true };
     },
@@ -190,7 +202,14 @@
 
   // een strookje bovenaan, zodat niemand denkt dat dit echt is
   const tag = document.createElement("div");
-  tag.textContent = "Demo: verzonnen playlists, er wordt niets gedownload";
+  tag.textContent = t("Demo: verzonnen playlists, er wordt niets gedownload");
   tag.style.cssText = "position:fixed;top:0;left:50%;transform:translateX(-50%);z-index:70;background:var(--sun);color:#160f26;font:600 12px/1 var(--body);padding:5px 12px;border-radius:0 0 10px 10px;";
   document.body.appendChild(tag);
+
+  // voor wie aan PlaylistFlac werkt: teksten zonder Engels meteen in beeld (ui/lang-en.js)
+  setInterval(() => {
+    if (!I18N_MISSING.size) return;
+    tag.textContent = `${I18N_MISSING.size} ${LANG === "nl" ? "teksten zonder Engels, zie de console" : "texts without English, see the console"}`;
+    tag.style.background = "var(--bad)";
+  }, 2000);
 })();

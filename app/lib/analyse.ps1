@@ -77,40 +77,40 @@ function Run-AnalyseInstall {
     Update-Task @{ name = 'Analyse'; phase = 'installeren'; total = 4; done = 0 } -Force
     $py = Find-Python
     if (-not $py) {
-        if ($OnWin) { throw 'Python niet gevonden. Installeer Python 3 van python.org (vink "Add python.exe to PATH" aan) en probeer het daarna opnieuw.' }
-        if ($OnMac) { throw 'Python niet gevonden. Installeer Python 3.13 van python.org (de macOS-installer) en probeer het daarna opnieuw.' }
-        throw 'Python 3.10 of nieuwer niet gevonden. Installeer python3 en python3-venv met je pakketbeheer (bijvoorbeeld: sudo apt install python3 python3-venv) en probeer het daarna opnieuw.'
+        if ($OnWin) { throw (L 'Python niet gevonden. Installeer Python 3 van python.org (vink "Add python.exe to PATH" aan) en probeer het daarna opnieuw.' 'Python not found. Install Python 3 from python.org (tick "Add python.exe to PATH") and try again.') }
+        if ($OnMac) { throw (L 'Python niet gevonden. Installeer Python 3.13 van python.org (de macOS-installer) en probeer het daarna opnieuw.' 'Python not found. Install Python 3.13 from python.org (the macOS installer) and try again.') }
+        throw (L 'Python 3.10 of nieuwer niet gevonden. Installeer python3 en python3-venv met je pakketbeheer (bijvoorbeeld: sudo apt install python3 python3-venv) en probeer het daarna opnieuw.' 'Python 3.10 or newer not found. Install python3 and python3-venv with your package manager (for example: sudo apt install python3 python3-venv) and try again.')
     }
-    Add-TaskLog "Python $($py.Version) gevonden: $($py.Path)"
+    Add-TaskLog (L "Python $($py.Version) gevonden: $($py.Path)" "Found Python $($py.Version): $($py.Path)")
     New-Item -ItemType Directory -Force $AnaDir | Out-Null
     if (Test-Path $AnaReady) { Remove-Item $AnaReady -Force }
     $pipLog = { param($l) if ($l -match '^(Collecting|Successfully|ERROR)') { Add-TaskLog $l.Trim() } }
     if (-not (Test-Path $AnaPy)) {
-        Add-TaskLog 'Eigen Python-omgeving maken in data\analyse'
+        Add-TaskLog (L 'Eigen Python-omgeving maken in data\analyse' 'Creating a separate Python environment in data\analyse')
         $r = Invoke-Logged $py.Path @('-m', 'venv', (Join-Path $AnaDir 'venv')) $pipLog
         if ($r.Code) {
-            $tip = if (-not $OnWin -and -not $OnMac) { ' Op Linux heb je daarvoor vaak python3-venv nodig (sudo apt install python3-venv).' } else { '' }
-            throw "Python-omgeving maken mislukte: $(Last-Lines $r.Err)$tip"
+            $tip = if (-not $OnWin -and -not $OnMac) { L ' Op Linux heb je daarvoor vaak python3-venv nodig (sudo apt install python3-venv).' ' On Linux you often need python3-venv for that (sudo apt install python3-venv).' } else { '' }
+            throw ((L 'Python-omgeving maken mislukte' 'Creating the Python environment failed') + ": $(Last-Lines $r.Err)$tip")
         }
     }
     Update-Task @{ done = 1 } -Force
     $pip = @('-m', 'pip', 'install', '--disable-pip-version-check', '--progress-bar', 'off')
-    Add-TaskLog 'PyTorch installeren (ongeveer 800 MB, dit duurt even)'
+    Add-TaskLog (L 'PyTorch installeren (ongeveer 800 MB, dit duurt even)' 'Installing PyTorch (about 800 MB, this takes a while)')
     # Windows: de versie zonder videokaart-ondersteuning (kleiner). Een Mac haalt
     # PyTorch gewoon van PyPI; die heeft geen aparte cpu-variant.
     $torch = @('torch', 'torchaudio') + $(if ($OnMac) { @() } else { @('--index-url', 'https://download.pytorch.org/whl/cpu') })
     $r = Invoke-Logged $AnaPy ($pip + $torch) $pipLog
-    if ($r.Code) { throw "PyTorch installeren mislukte: $(Last-Lines $r.Err)" }
+    if ($r.Code) { throw ((L 'PyTorch installeren mislukte' 'Installing PyTorch failed') + ": $(Last-Lines $r.Err)") }
     Update-Task @{ done = 2 } -Force
-    Add-TaskLog 'librosa, Beat This! en de rest installeren'
+    Add-TaskLog (L 'librosa, Beat This! en de rest installeren' 'Installing librosa, Beat This! and the rest')
     $r = Invoke-Logged $AnaPy ($pip + @('librosa', 'soundfile', 'soxr', 'einops', 'rotary-embedding-torch', 'mutagen', 'certifi', $BeatThisUrl)) $pipLog
-    if ($r.Code) { throw "Installeren mislukte: $(Last-Lines $r.Err)" }
+    if ($r.Code) { throw ((L 'Installeren mislukte' 'Installing failed') + ": $(Last-Lines $r.Err)") }
     Update-Task @{ done = 3 } -Force
-    Add-TaskLog 'Controleren en het Beat This!-model ophalen (80 MB)'
-    $r = Invoke-Logged $AnaPy @('-I', $AnaScript, '--check') { param($l) try { Add-TaskLog ($l | ConvertFrom-Json).msg } catch { } }
-    if ($r.Code) { throw "Controle mislukte: $(Last-Lines $r.Err)" }
+    Add-TaskLog (L 'Controleren en het Beat This!-model ophalen (80 MB)' 'Checking and fetching the Beat This! model (80 MB)')
+    $r = Invoke-Logged $AnaPy @('-I', $AnaScript, '--check', '--taal', $script:Lang) { param($l) try { Add-TaskLog ($l | ConvertFrom-Json).msg } catch { } }
+    if ($r.Code) { throw ((L 'Controle mislukte' 'Check failed') + ": $(Last-Lines $r.Err)") }
     [IO.File]::WriteAllText($AnaReady, "PlaylistFlac $Version`r`n$((Get-Date).ToString('o'))`r`n", $Utf8)
-    Update-Task @{ done = 4; state = 'klaar'; message = 'De analyse is geinstalleerd. Kies nu Analyseren & exporteren.' } -Force
+    Update-Task @{ done = 4; state = 'klaar'; message = (L 'De analyse is geinstalleerd. Kies nu Analyseren & exporteren.' 'The analysis is installed. Now choose Analyse & export.') } -Force
 }
 
 # Muziekbestanden van een playlist: in de volgorde van de .m3u8 (Spotify-volgorde),
@@ -126,25 +126,25 @@ function Get-PlaylistFiles($name) {
 }
 
 function Run-Analyse($task) {
-    if (-not ((Test-Path $AnaReady) -and (Test-Path $AnaPy))) { throw 'De analyse is nog niet geinstalleerd.' }
+    if (-not ((Test-Path $AnaReady) -and (Test-Path $AnaPy))) { throw (L 'De analyse is nog niet geinstalleerd.' 'The analysis is not installed yet.') }
     [void](Load-Config)
     $pl = $cfg['playlists'][[int]$task.index]
     $name = if ($pl.Name) { $pl.Name } elseif ($task.name -and $task.name -ne 'playlist') { $task.name } else { (Resolve-Playlist $pl).Name }
     Update-Task @{ name = $name; phase = 'analyseren' } -Force
     $files = @(Get-PlaylistFiles $name)
-    if (-not $files.Count) { throw "Geen muziek gevonden in de map van $name. Download eerst wat nummers." }
+    if (-not $files.Count) { throw (L "Geen muziek gevonden in de map van $name. Download eerst wat nummers." "No music found in the folder of $name. Download some tracks first.") }
     $doen = @($task.doen | Where-Object { $AnaDoen -contains $_ })
     $formaten = @($task.formaten | Where-Object { $AnaFormaten -contains $_ })
-    if (-not $doen.Count -or -not $formaten.Count) { throw 'Kies wat je wilt analyseren en voor welke software.' }
+    if (-not $doen.Count -or -not $formaten.Count) { throw (L 'Kies wat je wilt analyseren en voor welke software.' 'Choose what to analyse and for which software.') }
     Update-Task @{ total = $files.Count; current = [IO.Path]::GetFileNameWithoutExtension($files[0]) } -Force
-    Add-TaskLog ("{0} tracks analyseren: {1}" -f $files.Count, ($doen -join ', '))
+    Add-TaskLog ((L '{0} tracks analyseren: {1}' 'Analysing {0} tracks: {1}') -f $files.Count, ($doen -join ', '))
 
     New-Item -ItemType Directory -Force $ExportDir | Out-Null
     $list = Join-Path $StatusDir 'analyse-lijst.txt'
     [IO.File]::WriteAllLines($list, [string[]]$files, $Utf8)
     $base = Join-Path $ExportDir (Safe-FileName $name)
     $out = @{}
-    $argList = @('-I', $AnaScript, '--lijst', $list, '--naam', $name, '--doen', ($doen -join ','), '--rapport', "$base.analyse.json")
+    $argList = @('-I', $AnaScript, '--lijst', $list, '--naam', $name, '--doen', ($doen -join ','), '--rapport', "$base.analyse.json", '--taal', $script:Lang)
     if ($formaten -contains 'traktor') { $out.nml = "$base.nml"; $argList += @('--nml', $out.nml) }
     # Standaard alleen de nieuw geanalyseerde tracks naar Traktor: een import zet
     # anders de cues en het grid van de hele playlist terug, ook wat je zelf had verschoven.
@@ -168,46 +168,46 @@ function Run-Analyse($task) {
             Add-TaskLog $m.msg
         } elseif ($m.t -eq 'track' -and $m.bewaard) {
             $st.bewaard++
-            Add-TaskLog ('Al geanalyseerd, overgeslagen: {0}' -f [IO.Path]::GetFileNameWithoutExtension($m.naam))
+            Add-TaskLog ((L 'Al geanalyseerd, overgeslagen: {0}' 'Already analysed, skipped: {0}') -f [IO.Path]::GetFileNameWithoutExtension($m.naam))
             Update-Task @{ done = [int]$m.i; current = $next } -Force
         } elseif ($m.t -eq 'track') {
             $st.ok++
             $bits = @()
             if ($m.bpm) { $bits += ('{0} BPM' -f ([double]$m.bpm).ToString('0.00', $Inv)) }
-            if ($m.key) { $bits += "key $($m.key)" + $(if ($m.key_bron -eq 'geschat') { ' (geschat)' } else { ' (uit tags)' }) }
-            if ($m.energy) { $bits += "energy $($m.energy) ($($m.kleur))" + $(if ($m.energy_bron -eq 'tags') { ' uit tags' } else { '' }) }
+            if ($m.key) { $bits += "key $($m.key)" + $(if ($m.key_bron -eq 'geschat') { L ' (geschat)' ' (estimated)' } else { L ' (uit tags)' ' (from tags)' }) }
+            if ($m.energy) { $bits += "energy $($m.energy) ($($m.kleur))" + $(if ($m.energy_bron -eq 'tags') { L ' uit tags' ' from tags' } else { '' }) }
             if ($m.cues) { $bits += "$($m.cues) cues" }
             if ($m.onzeker) { $st.onzeker++ }
-            if ($m.nalopen) { $bits += 'even nalopen'; $st.nalopen++ }
-            if (-not $bits.Count) { $bits += 'niets gevonden' }
-            Add-TaskLog ('Geanalyseerd: {0} - {1}' -f [IO.Path]::GetFileNameWithoutExtension($m.naam), ($bits -join ', '))
+            if ($m.nalopen) { $bits += (L 'even nalopen' 'worth checking'); $st.nalopen++ }
+            if (-not $bits.Count) { $bits += (L 'niets gevonden' 'nothing found') }
+            Add-TaskLog ((L 'Geanalyseerd: {0} - {1}' 'Analysed: {0} - {1}') -f [IO.Path]::GetFileNameWithoutExtension($m.naam), ($bits -join ', '))
             Update-Task @{ done = [int]$m.i; current = $next } -Force
         } elseif ($m.t -eq 'fout') {
             $st.fout++
-            Add-TaskLog "Mislukt: $($m.naam) - $($m.msg)"
+            Add-TaskLog ((L 'Mislukt' 'Failed') + ": $($m.naam) - $($m.msg)")
             Update-Task @{ done = [int]$m.i; current = $next } -Force
         }
     }
     $r = Invoke-Logged $AnaPy $argList $onLine
-    if ($r.Code) { throw "De analyse stopte met een fout: $(Last-Lines $r.Err)" }
-    $msg = if ($st.bewaard) { "$($st.ok) tracks geanalyseerd, $($st.bewaard) overgeslagen omdat ze al klaar waren." } else { "$($st.ok) van $($files.Count) tracks geanalyseerd." }
-    if ($st.fout) { $msg += " Bij $($st.fout) mislukt." }
-    if ($st.nalopen) { $msg += " Bij $($st.nalopen) staat iets om na te lopen: zie Analyse bij de playlist." }
-    $msg += ' Klaar in data\export: ' + ((@($out.Values) | ForEach-Object { [IO.Path]::GetFileName($_) }) -join ' en ') + '.'
+    if ($r.Code) { throw ((L 'De analyse stopte met een fout' 'The analysis stopped with an error') + ": $(Last-Lines $r.Err)") }
+    $msg = if ($st.bewaard) { L "$($st.ok) tracks geanalyseerd, $($st.bewaard) overgeslagen omdat ze al klaar waren." "$($st.ok) tracks analysed, $($st.bewaard) skipped because they were already done." } else { L "$($st.ok) van $($files.Count) tracks geanalyseerd." "$($st.ok) of $($files.Count) tracks analysed." }
+    if ($st.fout) { $msg += L " Bij $($st.fout) mislukt." " Failed for $($st.fout)." }
+    if ($st.nalopen) { $msg += L " Bij $($st.nalopen) staat iets om na te lopen: zie Analyse bij de playlist." " $($st.nalopen) have something to check: see Analysis on the playlist." }
+    $msg += (L ' Klaar in data\export: ' ' Ready in data\export: ') + ((@($out.Values) | ForEach-Object { [IO.Path]::GetFileName($_) }) -join (L ' en ' ' and ')) + '.'
     if ($out.nml) {
         try {
-            $volgorde = ' Eerst de bestanden in Traktor slepen en Traktor afsluiten, pas daarna importeren (kies dan Playlist).'
+            $volgorde = L ' Eerst de bestanden in Traktor slepen en Traktor afsluiten, pas daarna importeren (kies dan Playlist).' ' First drag the files into Traktor and quit Traktor, only then import (and choose Playlist).'
             if ($task.hele) {
                 $desk = Copy-NmlToDesktop $out.nml
-                if ($desk) { $msg += " Voor Traktor staat de hele playlist op je bureaublad: $([IO.Path]::GetFileName($desk))." + $volgorde }
+                if ($desk) { $msg += (L ' Voor Traktor staat de hele playlist op je bureaublad: ' ' For Traktor, the whole playlist is on your desktop: ') + "$([IO.Path]::GetFileName($desk))." + $volgorde }
             } elseif ($st.nieuw) {
                 $desk = Copy-NmlToDesktop $nieuwNml
-                if ($desk) { $msg += " Voor Traktor staan de $($st.nieuw) nieuwe tracks op je bureaublad: $([IO.Path]::GetFileName($desk)). De rest blijft in Traktor zoals hij is." + $volgorde }
+                if ($desk) { $msg += (L " Voor Traktor staan de $($st.nieuw) nieuwe tracks op je bureaublad: $([IO.Path]::GetFileName($desk)). De rest blijft in Traktor zoals hij is." " For Traktor, the $($st.nieuw) new tracks are on your desktop: $([IO.Path]::GetFileName($desk)). The rest stays as it is in Traktor.") + $volgorde }
             } else {
                 Remove-DesktopNml $out.nml     # anders importeer je per ongeluk de vorige keer opnieuw
-                $msg += ' Geen nieuwe tracks, dus niets om in Traktor te importeren.'
+                $msg += L ' Geen nieuwe tracks, dus niets om in Traktor te importeren.' ' No new tracks, so nothing to import into Traktor.'
             }
-        } catch { Add-TaskLog "Kon de .nml niet op het bureaublad zetten: $($_.Exception.Message)" }
+        } catch { Add-TaskLog ((L 'Kon de .nml niet op het bureaublad zetten' 'Could not put the .nml on the desktop') + ": $($_.Exception.Message)") }
     }
     Update-Task @{ state = 'klaar'; message = $msg; done = $files.Count; current = ''; files = @($out.Values) } -Force
 }

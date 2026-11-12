@@ -1,621 +1,551 @@
 # PlaylistFlac
 
-Versie 1.4.2-beta
+**English** | [Nederlands](README.nl.md)
 
-Je Spotify-playlists als mappen met FLAC-bestanden (of mp3 320), gedownload
-via Soulseek.
+Version 1.4.2-beta
 
-Spotify levert alleen de lijst met nummers; de muziek komt van Soulseek. Per
-nummer zie je welke **versies** er te vinden zijn (Extended Mix, Original Mix,
-Radio Edit, remixes) en kies jij welke je wilt. Handig, want Spotify heeft vaak
-alleen de korte radio-versie. Komen er nummers bij op de playlist, dan staan ze
-de volgende keer klaar.
+Your Spotify playlists as folders of FLAC files (or mp3 320), downloaded
+through Soulseek.
 
-![PlaylistFlac: per nummer de versies, met een lengtebalk en de Spotify-lengte als cyaan streep](docs/screenshot.png)
+Spotify only provides the list of tracks; the music comes from Soulseek. For
+each track you see which **versions** can be found (Extended Mix, Original Mix,
+Radio Edit, remixes) and you pick the ones you want. Handy, because Spotify
+often only has the short radio version. When tracks are added to the playlist,
+they're waiting for you next time.
 
-## Nieuw in 1.4.2-beta
+![PlaylistFlac: the versions of each track, with a length bar and the Spotify length as a cyan line](docs/screenshot.png)
 
-- **Linux**: start PlaylistFlac met `app/Start.sh`. De eerste keer zet hij
-  PlaylistFlac in je appmenu en koppelt hij `playlistflac://`, zodat
-  `index.html` de motor daarna zelf start. Zie [Op Linux](#op-linux).
+The interface is in English and Dutch. By default it follows your browser's
+language; you can change it under the gear icon (*Language*).
 
-## Nieuw in 1.4.1-beta
+## Coming in the next version (not released yet)
 
-- **Duidelijker uitleg voor Traktor**: de stappen staan nu in de juiste
-  volgorde. Eerst de bestanden zelf in Traktor slepen, dan Traktor afsluiten
-  zodat hij de collectie opslaat, en pas daarna de `.nml` importeren. Anders
-  raakt Traktor de covers kwijt. Zie [In Traktor](#in-traktor). Ook de melding
-  na een analyse herinnert je aan die volgorde.
+- **English and Dutch**: the whole interface, the messages and the tips are now
+  also in English. By default PlaylistFlac follows your browser's language; you
+  can choose under the gear icon (*Language*) or at the top right of the
+  introduction. The analysis then also gives the cues in Traktor and rekordbox
+  English names (*Load*, *Mix out -32*). This README is now in both languages.
 
-## Nieuw in 1.4.0-beta
+## New in 1.4.2-beta
 
-- **Uitleg op het moment zelf**: zie je een onderdeel voor het eerst (zoeken,
-  versies kiezen, de lengtebalk, downloaden, niet gevonden, analyseren), dan
-  licht PlaylistFlac het uit met een korte uitleg erbij. Elk onderdeel een
-  keer. Weer allemaal zien: tandwiel, *Uitleg opnieuw*. Helemaal uitzetten kan
-  op het kaartje zelf.
-- **Demo**: open `index.html?demo` in je browser om de interface te proberen
-  met verzonnen playlists, zonder Soulseek. Er wordt niets gedownload.
-- Onder de motorkap opgeruimd: het programma staat in losse onderdelen in
-  `app\lib`, de interface in `ui\`. Voor jou verandert er verder niets.
-- Bij de meldingen in de sectie *Analyse* staat weer een gewoon
-  opsommingsteken in plaats van een onleesbaar teken.
+- **Linux**: start PlaylistFlac with `app/Start.sh`. The first time, it adds
+  PlaylistFlac to your app menu and links `playlistflac://`, so `index.html`
+  starts the engine by itself after that. See [On Linux](#on-linux).
 
-## Nieuw in 1.3.5-beta
+## New in 1.4.1-beta
 
-- **Alleen nieuwe tracks naar Traktor**: de `.nml` op je bureaublad bevat
-  standaard alleen de tracks die net geanalyseerd zijn, als playlist
-  `<playlist> (nieuw)`. Een import overschrijft dus niet meer de cues en grids
-  die je zelf in Traktor hebt aangepast. Wil je toch alles, vink dan *Hele
-  playlist naar Traktor* aan.
-- **Analyseren & exporteren zit nu in het scherm van de playlist**, als
-  uitklapblok. Het aparte venster en de knop linksonder zijn weg.
+- **Clearer Traktor instructions**: the steps are now in the right order.
+  First drag the files themselves into Traktor, then quit Traktor so it saves
+  the collection, and only then import the `.nml`. Otherwise Traktor loses the
+  covers. See [In Traktor](#in-traktor). The message after an analysis also
+  reminds you of that order.
 
-## Nieuw in 1.3.4-beta
+## New in 1.4.0-beta
 
-- **Updateknop**: linksonder bij het versienummer. PlaylistFlac kijkt op GitHub
-  of er een nieuwere versie is en werkt zichzelf bij; je instellingen, je
-  wachtwoord en je muziek blijven staan. Deze versie moet je nog een keer met de
-  hand installeren, daarna kan het met de knop.
-- **Alleen nog analyseren wat nodig is**: tracks die al geanalyseerd zijn slaat
-  hij over, dus een nieuwe track in de playlist kost nog maar een minuut. Wil je
-  ze toch opnieuw, vink dan *Tracks die al geanalyseerd zijn opnieuw doen* aan.
-  Eerdere analyses tellen mee. Stop je een analyse halverwege, dan gaat hij de
-  volgende keer verder waar hij was.
-- **De `.nml` staat op je bureaublad** als `<playlist> (PlaylistFlac).nml`, want
-  daar opent Traktor zijn importvenster. De kopie wordt mee bijgewerkt.
-- **Belangrijk voor Traktor:** vraagt Traktor bij het inladen *File tags may
-  differ from playlist tags*, kies dan **Playlist**. Bij File komen de cues en
-  het grid niet binnen. Zie [In Traktor](#in-traktor).
+- **Tips at the right moment**: the first time you see a part of the app
+  (searching, choosing versions, the length bar, downloading, not found,
+  analysing), PlaylistFlac highlights it with a short explanation. Each part
+  once. To see them all again: gear icon, *Show tips again*. You can turn them
+  off on the tip itself.
+- **Demo**: open `index.html?demo` in your browser to try the interface with
+  made-up playlists, without Soulseek. Nothing is downloaded.
+- Tidied up under the hood: the program is split into parts in `app\lib`, the
+  interface lives in `ui\`. Nothing else changes for you.
+- The notes in the *Analysis* section show a normal bullet again instead of
+  an unreadable character.
 
-## Nieuw in 1.3.3-beta
+## New in 1.3.x-beta
 
-- **Belangrijk voor Traktor:** zet in de voorkeuren van Traktor het schrijven
-  van tags naar bestanden uit voordat je een `.nml` inlaadt. Staat dat aan, dan
-  herschrijft Traktor je muziekbestanden bij het inladen en kunnen bijvoorbeeld
-  album en genre verdwijnen. Zie [In Traktor](#in-traktor).
-- De knop uit 1.3.2-beta is weg: PlaylistFlac werkt de `.nml` nu vanzelf bij
-  zodra Traktor heeft opgeslagen.
+- **1.3.5**: the `.nml` on your desktop only holds the tracks analysed this
+  time, as the playlist `<playlist> (nieuw)`, so importing no longer overwrites
+  cues and grids you adjusted in Traktor. Tick *Whole playlist to Traktor* if
+  you want everything. *Analyse & export* is now a fold-out block on the
+  playlist screen.
+- **1.3.4**: an **update button** at the bottom left; PlaylistFlac checks
+  GitHub and updates itself, keeping your settings, password and music.
+  Already analysed tracks are skipped, and the `.nml` is put on your desktop
+  as `<playlist> (PlaylistFlac).nml`, where Traktor opens its import window.
+- **1.3.2 and 1.3.3**: covers stay in Traktor, because the `.nml` now carries
+  the cover reference, album, genre and so on. PlaylistFlac updates the `.nml`
+  by itself once Traktor has saved its collection. **Important:** turn off
+  writing tags to files in Traktor's preferences. See [In Traktor](#in-traktor).
+- **1.3.1**: fixes for Soulseek file names with `"`, `|`, `+` or `%`, and for
+  the same track appearing twice on a playlist.
+- **1.3.0**: **runs on a Mac too** (beta: not tested on a real Mac yet). See
+  [On a Mac](#on-a-mac).
 
-## Nieuw in 1.3.2-beta
+Earlier versions brought the Tim Selector, energy colours, an exact beatgrid
+and the *Analysis* section (1.2.0), *Analyse & export* (1.1.0) and the first
+shareable version with the browser interface, the queue and the `.m3u8` per
+playlist (1.0.0). The Dutch README has the full history.
 
-- **Covers blijven staan in Traktor**: de `.nml` neemt nu de cover-verwijzing,
-  het album, het genre en dergelijke mee, uit je Traktor-collectie of uit de
-  tags van het bestand. Zie [In Traktor](#in-traktor) voor de volgorde.
-- Heb je de tracks na de analyse aan Traktor toegevoegd, dan werkt PlaylistFlac
-  de `.nml` vanzelf bij zodra Traktor heeft opgeslagen, zonder opnieuw te
-  analyseren.
+## What you need
 
-## Nieuw in 1.3.1-beta
+- Windows 10 or 11. Nothing to install: the tool runs on PowerShell (part of
+  Windows) and fetches [sockseek](https://github.com/fiso64/sockseek), the
+  program that searches and downloads on Soulseek (~115 MB), the first time it
+  starts.
+- Or a **Mac** with macOS 13 or newer, with PowerShell 7 on it (free, see
+  [On a Mac](#on-a-mac)), or **Linux** with PowerShell 7 (see
+  [On Linux](#on-linux)).
+- A **Soulseek account**. No need to sign up separately: a new name and
+  password become an account the first time you log in. The tool can make one
+  up for you. If you already use SoulseekQt or Nicotine+, use a **separate**
+  account, otherwise they keep kicking each other out.
+- **Public** Spotify playlists.
+- A network that lets Soulseek through. Work and school networks often block
+  it; at home or through your phone it usually works.
 
-- Zoeken liep op Windows vast als een bestand op Soulseek tekens als `"` of `|`
-  in de naam had; dat is opgelost. Gaat er bij een nummer iets mis, dan blijft
-  de rest van de zoekronde bewaard.
-- Bestanden met `+`, `%` of `"` in de naam kunnen nu gedownload worden.
-- Staat hetzelfde nummer twee keer op de playlist, dan haalt hij het een keer
-  op. Lukt het opslaan van een bestand niet, dan gaat de rest gewoon door.
+## Installing and starting
 
-## Nieuw in 1.3.0-beta
+1. Unzip to a permanent place, for example `C:\Users\<you>\PlaylistFlac`.
+2. **The very first time:** double-click `app\Start.cmd`. That links
+   PlaylistFlac to Windows and opens the interface in your browser.
+3. **After that:** open the **PlaylistFlac** shortcut on your desktop (the
+   tool puts it there the first time) or simply `index.html`. The page starts
+   PlaylistFlac itself. Your browser asks whether it may open PlaylistFlac;
+   choose *Open* and tick *Always allow*.
 
-- **Werkt ook op een Mac** (beta: nog niet op een echte Mac getest). Zie
-  [Op een Mac](#op-een-mac). Op Windows verandert er niets.
+A minimised *PlaylistFlac* window appears in your taskbar. That's the engine:
+as long as it's open, the page works. Stop it with **Quit** in the page, or by
+closing that window.
 
-## Nieuw in 1.2.0
+The first time, four steps take you through the settings: account, music
+folder, preferences and your first playlist. You can change them later with
+the **gear icon** at the top left.
 
-- **Tim Selector** (tandwieltje): download mp3 in plaats van FLAC, en dan
-  altijd 320 kbps. Zie [Tim Selector](#tim-selector-mp3-in-plaats-van-flac).
-- **Energy-kleur** bij *Analyseren & exporteren*: energy 1-10 als kleur van
-  de track in Traktor en rekordbox.
-- **Betere cues**: het laadpunt staat op de eerste maat waarin de muziek
-  begint, en breaks en drops vallen ook goed als de frases halverwege een
-  track verspringen.
-- **Exact beatgrid**: het grid staat nu op de aanslag van de beat, meestal
-  binnen 2 ms van een met de hand gezet grid, en de BPM klopt tot op 0,001.
-  Bij mp3's stond het grid vaak zo'n 50 ms te vroeg door een leeg infoblokje
-  aan het begin; daar wordt nu voor gecorrigeerd.
-- **Sectie Analyse** bij elke geanalyseerde playlist: per track BPM, key,
-  energy en cues, met bovenaan wat je even moet nalopen. Zie [Na de
-  analyse](#na-de-analyse-de-sectie-analyse).
-- **Snelkoppeling op je bureaublad**: die zet PlaylistFlac er de eerste keer
-  zelf neer.
+### On a Mac
 
-## Nieuw in 1.1.0
+*Beta: this version has been built and tested on Windows and Linux, not yet on
+a real Mac. If something goes wrong, let us know what you see (a screenshot of
+the Terminal window helps most).*
 
-- **Analyseren & exporteren** (linksonder, vervangt *Exporteren voor
-  rekordbox*): PlaylistFlac bepaalt zelf BPM, beatgrid, cues en key, zonder
-  Traktor, en schrijft per playlist een Traktor-playlist (`.nml`) en een
-  `rekordbox.xml`. Je vinkt aan wat je wilt. Optioneel: het vraagt een
-  eenmalige installatie met Python. Zie [Analyseren en
-  exporteren](#analyseren-en-exporteren).
-- De oude export, de analyse uit je Traktor-collectie meenemen naar
-  rekordbox, zit in hetzelfde venster onder *Traktor-collectie → rekordbox*.
+1. **Install PowerShell 7** (once, free, from Microsoft). Download the `.pkg`
+   for macOS via
+   [this page](https://learn.microsoft.com/powershell/scripting/install/installing-powershell-on-macos)
+   and install it. Homebrew works too: `brew install powershell`.
+2. Unzip to a permanent place, for example your home folder
+   (`/Users/<you>/PlaylistFlac`). Don't leave it in *Downloads* if you often
+   clean that folder.
+3. **The very first time:** double-click `app/Start.command`. macOS will
+   probably say it comes from an *unidentified developer*:
+   - click *Done* (or *Cancel*);
+   - go to **System Settings → Privacy & Security**, scroll down and click
+     **Open Anyway** next to *Start.command*;
+   - double-click `Start.command` again and choose **Open**.
 
-## Nieuw in 1.0.1
+   A Terminal window opens: that's the engine, leave it open. Your browser
+   opens PlaylistFlac. The first time it fetches sockseek (~110 MB).
+4. **After that:** double-click **PlaylistFlac** on your desktop (the tool
+   puts it there the first time), or open `index.html`. The engine then runs in
+   the background without a Terminal window; stop it with **Quit** in the page.
 
-- Tijdens het downloaden zie je weer de bestandsgrootte (bijvoorbeeld
-  "12,3 / 38,5 MB") in plaats van "0,0 MB".
+Differences from Windows:
 
-## Nieuw in 1.0.0
+- Your music goes to `~/Music/<playlist>` by default; Traktor on a Mac keeps
+  its collection in `~/Documents/Native Instruments`.
+- For *Analyse & export*, install Python 3.13 from
+  [python.org](https://www.python.org/downloads/macos/) (the macOS installer).
+  The Python that comes with a Mac is too old. On a Mac with Apple silicon (M1
+  and later) the analysis is probably faster than on an average Windows laptop.
+- Instead of `app\Start.cmd -...` for the options below, type
+  `./Start.command -...` in Terminal, in the `app` folder.
 
-De eerste versie om te delen:
+### On Linux
 
-- Interface in je browser: `index.html` openen start de tool. Een korte
-  introductie bij de eerste keer; instellingen via het tandwieltje.
-- Per nummer de versies op Soulseek kiezen, met lengtebalk, fragment van 30
-  seconden, en meerdere versies tegelijk.
-- Wachtrij voor zoeken en downloaden, over playlists heen, met een logboek van
-  wat er gebeurt.
-- Herkent wat al in de playlistmap staat en downloadt dat niet opnieuw.
-- Per playlist een `.m3u8` voor elke DJ-software, en een export voor rekordbox
-  (met de analyse van Traktor, als je dat hebt).
-- Optioneel: Spotify koppelen voor playlists van meer dan 100 nummers.
+1. **Install PowerShell 7** (once). On Debian, Ubuntu and Kali:
+   `sudo apt install powershell`; otherwise see
+   [this page](https://learn.microsoft.com/powershell/scripting/install/installing-powershell-on-linux).
+2. Unzip to a permanent place, for example `~/PlaylistFlac`.
+3. **The very first time:** in a terminal, in the `app` folder, run
+   `./Start.sh`. That adds **PlaylistFlac** to your app menu, links
+   `playlistflac://` to it and opens the interface in your browser. The
+   terminal window is the engine: leave it open.
+4. **After that:** start **PlaylistFlac** from your app menu, or open
+   `index.html`. The engine then runs in the background; stop it with **Quit**
+   in the page.
 
-## Wat heb je nodig
+Differences from Windows:
 
-- Windows 10 of 11. Niets installeren: de tool draait op PowerShell (zit in
-  Windows) en haalt bij de eerste start zelf
-  [sockseek](https://github.com/fiso64/sockseek) op, het programma dat op
-  Soulseek zoekt en downloadt (~115 MB).
-- Of een **Mac** met macOS 13 of nieuwer, met PowerShell 7 erop (gratis, zie
-  [Op een Mac](#op-een-mac)).
-- Een **Soulseek-account**. Aanmaken hoeft niet apart: een nieuwe naam met
-  wachtwoord wordt bij de eerste keer inloggen vanzelf een account. De tool
-  bedenkt er ook een voor je. Gebruik je al SoulseekQt of Nicotine+, neem dan
-  een **apart** account, anders gooien ze elkaar eruit.
-- **Openbare** Spotify-playlists.
-- Een netwerk dat Soulseek doorlaat. Op werk- en schoolnetwerken is het vaak
-  geblokkeerd; thuis of via je telefoon werkt het meestal wel.
-
-## Installeren en starten
-
-1. Pak de zip uit naar een vaste plek, bijv. `C:\Users\<jij>\PlaylistFlac`.
-2. **De allereerste keer:** dubbelklik op `app\Start.cmd`. Dat koppelt
-   PlaylistFlac aan Windows en opent de interface in je browser.
-3. **Daarna:** open de snelkoppeling **PlaylistFlac** op je bureaublad (die
-   zet de tool er de eerste keer zelf neer) of gewoon `index.html`. De pagina
-   start PlaylistFlac zelf. Je browser vraagt dan of hij
-   PlaylistFlac mag openen; kies *Openen* en vink *Altijd toestaan* aan.
-
-Er komt een geminimaliseerd venster *PlaylistFlac* in je taakbalk. Dat is de
-motor: zolang dat open is, werkt de pagina. Stoppen kan met **Afsluiten** in de
-pagina, of door dat venster te sluiten.
-
-Bij de eerste start loop je in vier stappen door de instellingen: account,
-muziekmap, voorkeuren en je eerste playlist. Later wijzigen kan via het
-**tandwieltje** linksboven.
-
-### Op een Mac
-
-*Beta: deze versie is gebouwd en getest op Windows en Linux, nog niet op een
-echte Mac. Loopt er iets mis, geef dan door wat je ziet (een schermfoto van
-het Terminal-venster helpt het meest).*
-
-1. **PowerShell 7 installeren** (eenmalig, gratis, van Microsoft). Download
-   het `.pkg`-bestand voor macOS via
-   [deze pagina](https://learn.microsoft.com/powershell/scripting/install/installing-powershell-on-macos)
-   en installeer het. Met Homebrew kan ook: `brew install powershell`.
-2. Pak de zip uit naar een vaste plek, bijv. je thuismap
-   (`/Users/<jij>/PlaylistFlac`). Niet in *Downloads* laten staan als je die
-   map vaak opruimt.
-3. **De allereerste keer:** dubbelklik op `app/Start.command`. macOS zegt
-   waarschijnlijk dat het van een *onbekende ontwikkelaar* komt:
-   - klik op *Gereed* (of *Annuleer*);
-   - ga naar **Systeeminstellingen → Privacy en beveiliging**, scroll naar
-     beneden en klik bij *Start.command* op **Open toch**;
-   - dubbelklik nog een keer op `Start.command` en kies **Open**.
-
-   Er opent een Terminal-venster: dat is de motor, laat het open. Je browser
-   opent PlaylistFlac. De eerste keer haalt hij sockseek op (~110 MB).
-4. **Daarna:** dubbelklik op **PlaylistFlac** op je bureaublad (die zet de
-   tool er de eerste keer zelf neer), of open `index.html`. Dan draait de
-   motor op de achtergrond, zonder Terminal-venster; stoppen doe je met
-   **Afsluiten** in de pagina.
-
-Verschillen met Windows:
-
-- Je muziek komt standaard in `~/Music/<playlist>`; Traktor op een Mac zoekt
-  zijn collectie in `~/Documents/Native Instruments`.
-- Voor *Analyseren & exporteren* installeer je Python 3.13 van
-  [python.org](https://www.python.org/downloads/macos/) (de macOS-installer).
-  De Python die al op een Mac staat is te oud. Op een Mac met Apple-chip (M1
-  en later) is de analyse waarschijnlijk sneller dan op een gemiddelde
-  Windows-laptop.
-- In plaats van `app\Start.cmd -...` voor de opties hieronder typ je in
-  Terminal, in de map `app`: `./Start.command -...`.
-
-### Op Linux
-
-1. **PowerShell 7 installeren** (eenmalig). Op Debian, Ubuntu en Kali:
-   `sudo apt install powershell`; anders zie
-   [deze pagina](https://learn.microsoft.com/powershell/scripting/install/installing-powershell-on-linux).
-2. Pak de zip uit naar een vaste plek, bijv. `~/PlaylistFlac`.
-3. **De allereerste keer:** start in een terminal, in de map `app`:
-   `./Start.sh`. Dat zet **PlaylistFlac** in je appmenu, koppelt
-   `playlistflac://` eraan en opent de interface in je browser. Het
-   terminalvenster is de motor: laat het open.
-4. **Daarna:** start **PlaylistFlac** uit je appmenu, of open `index.html`.
-   Dan draait de motor op de achtergrond; stoppen doe je met **Afsluiten** in
-   de pagina.
-
-Verschillen met Windows:
-
-- Je muziek komt standaard in `~/Music/<playlist>`.
-- Voor *Analyseren & exporteren* heb je Python 3.10 of nieuwer met venv nodig:
+- Your music goes to `~/Music/<playlist>` by default.
+- For *Analyse & export* you need Python 3.10 or newer with venv:
   `sudo apt install python3 python3-venv`.
-- In plaats van `app\Start.cmd -...` voor de opties hieronder typ je in de map
-  `app`: `./Start.sh -...`.
+- Instead of `app\Start.cmd -...` for the options below, type `./Start.sh -...`
+  in the `app` folder.
 
-## Gebruiken
+## Using it
 
-- **Playlist toevoegen** (linksonder): plak de Spotify-link. In Spotify: drie
-  puntjes bij de playlist, *Delen*, *Link naar playlist kopiëren*.
-- **Zoek nieuwe nummers op Soulseek**: zoekt alles wat nog niet binnen is. Je
-  ziet live hoe ver hij is.
-- **Kies je versies**: per nummer een lijstje versies. Elke versie heeft een
-  balk die laat zien hoe lang hij is; de **cyaan streep** is de lengte op
-  Spotify. Zo zie je meteen welke de lange versie is. De aanrader (ster) staat
-  al aangevinkt; meerdere versies aanvinken mag, elk wordt een eigen bestand.
-  Met de afspeelknop hoor je 30 seconden van het nummer op Spotify.
-- **Download**: de knop onderin haalt alles op wat aangevinkt is. Hij probeert
-  alle bestanden tegelijk; lukt een bron niet, dan neemt hij een volgende
-  ronde een andere bron voor dezelfde versie.
-- **Wachtrij**: zoeken en downloaden gaan achter elkaar, ook over playlists
-  heen. Kies je versies in playlist A, klik Download, ga naar playlist B en doe
-  daar hetzelfde: B komt in de wachtrij en start vanzelf als A klaar is.
-  Onder *Hierna in de wachtrij* zie je wat er nog komt; *Uit wachtrij* haalt
-  iets eraf, *Alles stoppen* stopt de huidige taak en leegt de wachtrij.
-- **Wat er gebeurt**: tijdens en na elke taak staat er een logboek met tijden:
-  inloggen, welk nummer hij zoekt, bij wie hij downloadt, wat binnenkomt en wat
-  mislukt (en waarom).
-- **Overslaan**: wordt niet meer gevraagd. Terughalen kan onder *Overgeslagen*.
-- **Opnieuw kiezen** (onder *Binnen*): wil je toch een andere versie, dan zet
-  dit het nummer terug in de lijst.
+- **Add playlist** (bottom left): paste the Spotify link. In Spotify: the
+  three dots next to the playlist, *Share*, *Copy link to playlist*.
+- **Search new tracks on Soulseek**: searches everything that isn't in yet.
+  You can follow its progress live.
+- **Choose your versions**: a list of versions per track. Each version has a
+  bar showing its length; the **cyan line** is the length on Spotify, so you
+  can see at a glance which one is the long version. The recommended version
+  (star) is already ticked; you can tick several, each becomes its own file.
+  The play button plays a 30-second preview from Spotify.
+- **Download**: the button at the bottom fetches everything that's ticked. It
+  tries all files at once; if a source fails, the next round tries another
+  source for the same version.
+- **Queue**: searching and downloading run one after another, across
+  playlists too. Choose versions in playlist A, click Download, go to playlist
+  B and do the same: B joins the queue and starts by itself when A is done.
+  *Next in the queue* shows what's coming; *Remove from queue* takes something
+  off, *Stop everything* stops the current task and clears the queue.
+- **What's happening**: during and after each task there's a log with times:
+  logging in, which track it's searching, who it downloads from, what comes in
+  and what fails (and why).
+- **Skip**: no longer asked about. You can bring it back under *Skipped*.
+- **Choose again** (under *Downloaded*): want a different version after all?
+  This puts the track back in the list.
 
-### Welke versie is de aanrader?
+### Which version is recommended?
 
-1. Is het nummer op Spotify een remix (*Domino - Space 92 Remix*), dan blijft
-   het die remix, bij voorkeur de extended versie ervan.
-2. Daarbinnen wint wat het eerst in *Voorkeur bij versies* staat. Standaard:
+1. If the track on Spotify is a remix (*Domino - Space 92 Remix*), it stays
+   that remix, preferably its extended version.
+2. Within that, whatever comes first in *Preferred versions* wins. Default:
    `extended, original, club`.
-3. Is het nummer geen remix, dan komen remixes van anderen onderaan.
-4. Bij gelijke stand wint de versie met de meeste vrije bronnen.
+3. If the track isn't a remix, other people's remixes go to the bottom.
+4. On a tie, the version with the most free sources wins.
 
-Herkennen gaat op de bestandsnaam op Soulseek, en die zijn niet altijd netjes.
-Kijk bij twijfel naar de lengtebalk.
+Recognising versions relies on the file names on Soulseek, which aren't always
+tidy. When in doubt, look at the length bar.
 
-### Waarom lukken sommige downloads niet?
+### Why do some downloads fail?
 
-Soulseek is van gewone mensen die hun muziek delen. Een bron kan offline zijn,
-of je in een wachtrij zetten. Nieuwe accounts die zelf niets delen, staan bij
-sommige mensen achteraan. PlaylistFlac kiest daarom eerst bronnen met een vrij
-uploadslot ("vrij" bij een versie). Via een mobiele hotspot kunnen anderen geen
-verbinding met jou maken, wat ook bronnen kost. Wat niet lukt blijft staan;
-later opnieuw proberen levert vaak nog wat op.
+Soulseek is ordinary people sharing their music. A source can be offline, or
+put you in a queue. New accounts that share nothing themselves end up at the
+back with some people. That's why PlaylistFlac picks sources with a free
+upload slot first ("free" next to a version). Through a mobile hotspot, others
+can't connect to you, which also costs sources. Whatever fails stays in the
+list; trying again later often turns something up.
 
-### Tim Selector: mp3 in plaats van FLAC
+### Tim Selector: mp3 instead of FLAC
 
-Standaard haalt PlaylistFlac FLAC: verliesvrij, maar zo'n 30 tot 60 MB per
-nummer. Zet je bij het tandwieltje de **Tim Selector** aan, dan downloadt hij
-mp3's, met deze regels:
+By default PlaylistFlac fetches FLAC: lossless, but around 30 to 60 MB per
+track. Turn on the **Tim Selector** under the gear icon and it downloads mp3s,
+with these rules:
 
-- **Altijd 320 kbps.** Een mp3 met een lagere bitrate, of waarvan de bitrate
-  niet bekend is, wordt overgeslagen. Liever even geen nummer dan een slechte
-  mp3; de volgende keer zoekt hij opnieuw.
-- **Alleen mp3.** FLAC-bronnen tellen dan niet mee, en *Alleen FLAC* doet niet
-  mee zolang de Tim Selector aan staat.
-- **Wat al binnen is, blijft staan.** Een nummer dat al als FLAC in de map
-  staat, wordt niet nog eens als mp3 gehaald.
+- **Always 320 kbps.** An mp3 with a lower bitrate, or an unknown one, is
+  skipped. Better no track for now than a bad mp3; it searches again next time.
+- **Only mp3.** FLAC sources don't count, and *FLAC only* doesn't apply while
+  the Tim Selector is on.
+- **What you have stays.** A track that's already in the folder as FLAC isn't
+  fetched again as mp3.
 
-Een mp3 van 320 kbps is ongeveer 12 MB voor een track van vijf minuten.
-Handig bij weinig schijfruimte, of als je speler of USB-stick geen FLAC
-speelt. Je kunt hem op elk moment aan of uit zetten; dat geldt voor de
-volgende downloads.
+A 320 kbps mp3 is about 12 MB for a five-minute track. Handy when disk space
+is short, or when your player or USB stick doesn't play FLAC. You can switch it
+on or off at any time; it applies to the next downloads.
 
-## Staat het al in de map?
+## Is it already in the folder?
 
-Bij elke playlist kijkt PlaylistFlac ook in de map zelf. Een bestand met de
-artiest en de titel van een nummer erin telt als binnen ("stond al in de map").
-Dat geldt ook voor een `_index.csv` die sockseek daar eerder achterliet. Een
-andere versie van hetzelfde nummer telt ook. Is het Spotify-nummer een remix van
-iemand (*Opal - Four Tet Remix*), dan moet die naam ook in het bestand staan.
-Wil je toch een andere versie: *Opnieuw kiezen* bij dat nummer.
+For each playlist, PlaylistFlac also looks in the folder itself. A file with
+the artist and the title of a track in its name counts as downloaded ("already
+in the folder"). So does a `_index.csv` that sockseek left there earlier. A
+different version of the same track counts too. If the Spotify track is
+someone's remix (*Opal - Four Tet Remix*), that name has to be in the file as
+well. Want a different version after all: *Choose again* on that track.
 
-## In je DJ-software zetten
+## Into your DJ software
 
-In elke playlistmap zet PlaylistFlac een **`<playlist>.m3u8`**, op dezelfde
-volgorde als op Spotify. Dat playlistformaat lezen rekordbox, Serato, Engine DJ,
-VirtualDJ, djay, Mixxx en Traktor allemaal: sleep het bestand (of de map) erin,
-en je software analyseert BPM, key en beatgrid zelf. Het bestand wordt
-bijgewerkt na elke download en als je de playlist opent.
+In each playlist folder PlaylistFlac puts a **`<playlist>.m3u8`**, in the same
+order as on Spotify. rekordbox, Serato, Engine DJ, VirtualDJ, djay, Mixxx and
+Traktor all read that playlist format: drag the file (or the folder) in, and
+your software analyses BPM, key and beatgrid itself. The file is updated after
+every download and whenever you open the playlist.
 
-## Analyseren en exporteren
+## Analyse and export
 
-*Beta.* Het beatgrid is meestal heel nauwkeurig, maar loop de tracks na voor
-je ermee draait. De cues zijn een vertrekpunt dat je zelf bijschaaft.
+*Beta.* The beatgrid is usually very accurate, but check the tracks before you
+play them out. The cues are a starting point for you to fine-tune.
 
-**Analyseren & exporteren** (uitklapblok in het scherm van een playlist) zet
-die playlist klaar voor je DJ-software, met:
+**Analyse & export** (a fold-out block on a playlist's screen) gets that
+playlist ready for your DJ software, with:
 
-- **BPM en beatgrid.** De BPM tot op 0,001, het grid op de aanslag van de
-  beat. De gridmarker staat op de eerste beat van een frase van 32 beats.
-- **Cues**, maximaal 8 hot cues:
-  - het laadpunt, op de eerste maat waarin de muziek begint;
-  - twee breaks, waar de bas wegvalt;
-  - twee drops, waar de bas terugkomt;
-  - uitmixen 64 en 32 beats voor het einde.
+- **BPM and beatgrid.** BPM to 0.001, the grid on the attack of the beat. The
+  grid marker sits on the first beat of a 32-beat phrase.
+- **Cues**, up to 8 hot cues:
+  - the load point, on the first bar where the music starts;
+  - two breaks, where the bass drops out;
+  - two drops, where the bass comes back;
+  - mix-out points 64 and 32 beats before the end.
 
-  Alleen de laatste uitmix-cue is een *fade-out*; in automode stopt Traktor op
-  de eerste fade-out die hij tegenkomt.
-- **Key**: uit de tags als het bestand er al een heeft (van de winkel of Mixed
-  In Key). Zelf schatten kan ook, maar is nog onbetrouwbaar en staat daarom
-  standaard uit; dan bepaalt Traktor of rekordbox de key.
-- **Energy-kleur** (optie): energy 1-10 in de geest van Mixed In Key, als
-  kleur van de track: 1-3 blauw, 4-5 violet, 6-7 groen, 8-9 oranje, 10 rood.
-  Staat er al een energy in de tags (`ENERGYLEVEL`), dan geldt die. Kost zo'n
-  halve minuut extra per track.
+  Only the last mix-out cue is a *fade-out*; in automode Traktor stops at the
+  first fade-out it meets.
+- **Key**: from the tags if the file already has one (from the store or Mixed
+  In Key). Estimating it is possible too, but not reliable yet and therefore off
+  by default; Traktor or rekordbox then works out the key.
+- **Energy colour** (option): energy 1-10 in the spirit of Mixed In Key, as the
+  track's colour: 1-3 blue, 4-5 violet, 6-7 green, 8-9 orange, 10 red. If the
+  tags already have an energy (`ENERGYLEVEL`), that one is used. Costs about
+  half a minute extra per track.
 
-Je vinkt aan wat je wilt en voor welke software: Traktor, rekordbox of
-allebei. Het resultaat komt in `data\export`:
+You tick what you want and for which software: Traktor, rekordbox or both.
+The result goes into `data\export`:
 
-- `<playlist>.nml`, voor Traktor, met de hele playlist;
-- `<playlist> (nieuw).nml`, met alleen de tracks die deze keer geanalyseerd
-  zijn. **Deze** staat op je bureaublad als `<playlist> (PlaylistFlac).nml`, met
-  in Traktor de playlist `<playlist> (nieuw)`. Zo blijven grids en cues die je
-  zelf in Traktor hebt aangepast staan. Wil je toch de hele playlist naar
-  Traktor, vink dan *Hele playlist naar Traktor* aan; dan staat de volledige
-  `.nml` op je bureaublad. Was er niets nieuws, dan haalt hij de oude kopie van
-  je bureaublad weg, zodat je niet per ongeluk de vorige keer opnieuw inlaadt;
-- `<playlist> (rekordbox).xml`, voor rekordbox, met de cues als hot cues én
+- `<playlist>.nml`, for Traktor, with the whole playlist;
+- `<playlist> (nieuw).nml`, with only the tracks analysed this time. **This
+  one** is put on your desktop as `<playlist> (PlaylistFlac).nml`, with the
+  playlist `<playlist> (nieuw)` in Traktor. That way grids and cues you
+  adjusted in Traktor stay put. If you do want the whole playlist in Traktor,
+  tick *Whole playlist to Traktor*; then the full `.nml` is on your desktop.
+  If there was nothing new, the old copy is removed from your desktop so you
+  don't import last time's again by accident;
+- `<playlist> (rekordbox).xml`, for rekordbox, with the cues as hot cues and
   memory cues.
 
-Tracks die al geanalyseerd zijn slaat hij over, tenzij je *Tracks die al
-geanalyseerd zijn opnieuw doen* aanvinkt. Is een bestand veranderd, of wil je
-iets analyseren dat de vorige keer niet aanstond, dan doet hij die track gewoon
-opnieuw. Mislukte tracks probeert hij elke keer weer.
+Tracks that are already analysed are skipped, unless you tick *Redo tracks
+that are already analysed*. If a file has changed, or you want something
+analysed that wasn't on last time, that track is simply done again. Failed
+tracks are retried every time.
 
-**Je muziekbestanden worden alleen gelezen, nooit aangepast.** Reken op
-ongeveer een minuut per track. Het loopt via de wachtrij, dus je kunt
-intussen verder.
+**Your music files are only read, never changed.** Expect about a minute per
+track. It runs through the queue, so you can carry on in the meantime.
 
-### Eenmalig installeren: "Analyse? Installeer dan Python!"
+With the interface in English, the cues in Traktor and rekordbox get English
+names (*Load*, *Break*, *Drop*, *Mix out -64*, *Mix out -32*); in Dutch they
+are *Laad*, *Break*, *Drop*, *Uitmix -64*, *Uitmix -32*.
 
-De analyse draait op Python met een neuraal netwerk dat beats en de eerste
-beat van de maat vindt
-([Beat This!](https://github.com/CPJKU/beat_this) van de Johannes Kepler
-Universiteit Linz). De eerste keer:
+### One-time install: "Analysis? Install Python first!"
 
-1. Installeer **Python 3.13** van [python.org](https://www.python.org/downloads/).
-   Op Windows: vink in het eerste scherm *Add python.exe to PATH* aan. Op een
-   Mac: kies de macOS-installer.
-2. Klik in PlaylistFlac op *Analyseren & exporteren* → *Analyse installeren*.
+The analysis runs on Python with a neural network that finds the beats and the
+first beat of the bar
+([Beat This!](https://github.com/CPJKU/beat_this) from Johannes Kepler
+University Linz). The first time:
 
-Dat downloadt ruim 1 GB (vooral PyTorch) naar `data\analyse` en duurt een paar
-minuten. Daarna werkt de analyse ook zonder internet. Weggooien kan altijd:
-verwijder `data\analyse`.
+1. Install **Python 3.13** from [python.org](https://www.python.org/downloads/).
+   On Windows: tick *Add python.exe to PATH* on the first screen. On a Mac:
+   choose the macOS installer.
+2. In PlaylistFlac, click *Analyse & export* → *Install analysis*.
+
+That downloads just over 1 GB (mostly PyTorch) into `data\analyse` and takes a
+few minutes. After that the analysis works offline too. You can always remove
+it: delete `data\analyse`.
 
 ### In Traktor
 
-Een `.nml` inladen overschrijft de gegevens van een track in Traktor. Een
-`.nml` kan geen plaatje bevatten, alleen een verwijzing naar de cover die
-Traktor al heeft. De volgorde is dus belangrijk: eerst de bestanden zelf in
-Traktor, pas daarna de playlist.
+Importing a `.nml` overwrites a track's data in Traktor. A `.nml` can't hold
+an image, only a reference to a cover Traktor already has. So the order
+matters: first the files themselves into Traktor, only then the playlist.
 
-0. **Eenmalig:** zet in de voorkeuren van Traktor het schrijven van tags naar
-   bestanden uit. Anders herschrijft Traktor je muziekbestanden bij het
-   importeren en kunnen bijvoorbeeld album en genre verdwijnen.
-1. **Bestanden inladen:** sleep de map van de playlist in Traktor, op de
-   *Track Collection*. Traktor leest dan de tracks en hun covers uit de
-   bestanden.
-2. **Traktor afsluiten:** dan slaat hij de collectie op. Pas dan staan de
-   covers in het bestand dat PlaylistFlac kan lezen.
-3. **Even wachten:** laat PlaylistFlac openstaan, of start hem. Binnen een
-   halve minuut werkt hij de `.nml` op je bureaublad vanzelf bij.
-4. **Playlist importeren:** start Traktor, klik met rechts op *Playlists* →
-   *Import Playlist* en kies op je bureaublad `<playlist> (PlaylistFlac).nml`.
-5. Vraagt Traktor *File tags may differ from playlist tags*, kies dan
-   **Playlist**. Bij File leest hij alleen het bestand en komen de cues en het
-   grid niet binnen.
+0. **Once:** turn off writing tags to files in Traktor's preferences.
+   Otherwise Traktor rewrites your music files when importing, and album and
+   genre can disappear, for example.
+1. **Load the files:** drag the playlist's folder into Traktor, onto the
+   *Track Collection*. Traktor then reads the tracks and their covers from the
+   files.
+2. **Quit Traktor:** that saves the collection. Only then are the covers in
+   the file PlaylistFlac can read.
+3. **Wait a moment:** keep PlaylistFlac open, or start it. Within half a
+   minute it updates the `.nml` on your desktop by itself.
+4. **Import the playlist:** start Traktor, right-click *Playlists* →
+   *Import Playlist* and pick `<playlist> (PlaylistFlac).nml` on your desktop.
+5. If Traktor asks *File tags may differ from playlist tags*, choose
+   **Playlist**. With File it only reads the file, and the cues and grid
+   don't come through.
 
-Komen er later tracks bij, doe dan hetzelfde: eerst de nieuwe bestanden in
-Traktor, afsluiten, dan importeren.
+When tracks are added later, do the same: first the new files into Traktor,
+quit, then import.
 
-Titel, artiest, album en genre komen uit de collectie of anders uit de tags van
-het bestand. Staat een track al in je collectie, dan kan Traktor bij het
-importeren je eigen grid en cues vervangen. Gebruik dit dus vooral voor
-nieuwe tracks.
+Title, artist, album and genre come from the collection, or otherwise from the
+file's tags. If a track is already in your collection, importing can replace
+your own grid and cues. So use this mainly for new tracks.
 
 ### In rekordbox
 
-Zie de stappen hieronder; kies alleen het `.xml`-bestand uit `data\export`.
+See the steps below; just choose the `.xml` file from `data\export`.
 
-### Hoe goed is het?
+### How good is it?
 
-Gemeten tegen 20 tracks waarvan het grid in Traktor met de hand exact is
-gezet:
+Measured against 20 tracks whose grid was set exactly by hand in Traktor:
 
-- **BPM** is bij alle 20 gelijk, tot op 0,001.
-- **Beatgrid** zit bij 18 van de 20 binnen 2 ms, ook bij mp3's. De
-  uitzondering: een track met een klik vlak vóór de kick, daar staat het grid
-  op die klik (14 ms te vroeg). Zoiets hoor je bij het nalopen meteen.
-- **Eerste beat van de maat** is bij alle 20 goed; op een grotere collectie
-  ruim 90%.
-- **Cues** zijn een vertrekpunt. Waar een break of opbouw precies hoort, is
-  een kwestie van gevoel; schuif ze waar nodig zelf.
+- **BPM** matches on all 20, to 0.001.
+- **Beatgrid** is within 2 ms on 18 of the 20, mp3s included. The exception:
+  a track with a click just before the kick, where the grid sits on that click
+  (14 ms early). You'll hear that straight away when checking.
+- **First beat of the bar** is right on all 20; on a bigger collection well
+  over 90%.
+- **Cues** are a starting point. Exactly where a break or build-up belongs is
+  a matter of feel; move them where needed.
 
-### Na de analyse: de sectie Analyse
+### After the analysis: the Analysis section
 
-Bij de playlist verschijnt een sectie **Analyse** met per track de BPM, key,
-energy (met kleurbolletje) en het aantal cues. Bovenaan, geel gemarkeerd,
-staan de tracks om even na te lopen:
+An **Analysis** section appears on the playlist with, per track, the BPM, key,
+energy (with a coloured dot) and the number of cues. At the top, marked
+yellow, are the tracks worth checking:
 
-- **Begin van de frase onzeker**: kijk of de cues op de goede maat staan.
-- **Eerste tel van de maat onzeker**: kijk waar de maat begint.
-- **Grid twijfelachtig**: er zit een tweede aanslag vlak naast de kick.
+- **Start of the phrase uncertain**: check that the cues are on the right bar.
+- **First beat of the bar uncertain**: check where the bar starts.
+- **Grid questionable**: there's a second hit right next to the kick.
 
-In grijs staat wat ter info is: een BPM die geen heel getal is, een mp3
-waarvan het grid is verschoven voor het infoblokje, geen key in de tags.
-Het eindbericht van de analyse zegt ook hoeveel tracks je moet nalopen. Het
-rapport staat als `<playlist>.analyse.json` in `data\export`.
+Grey is for your information: a BPM that isn't a whole number, an mp3 whose
+grid was shifted for its info frame, no key in the tags. The analysis's final
+message also says how many tracks to check. The report is saved as
+`<playlist>.analyse.json` in `data\export`.
 
-## Traktor-collectie naar rekordbox
+## Traktor collection to rekordbox
 
-Heb je Traktor en wil je de analyse **van Traktor** meenemen, gebruik dan
-*Traktor-collectie → rekordbox* in hetzelfde venster. Dat maakt een bestand
-dat rekordbox in één keer inleest, met je playlists in mappen.
+If you have Traktor and want to take **Traktor's** analysis along, use
+*Traktor collection → rekordbox* in the same block. That makes a file
+rekordbox reads in one go, with your playlists in folders.
 
-Wat er meegaat: de analyse van Traktor (BPM, key, beatgrid, hotcues, loops,
-sterren en kleuren), je Traktor-playlists en je PlaylistFlac-playlists op
-Spotify-volgorde. Nummers die Traktor nog niet kent, gaan mee zonder analyse;
-rekordbox analyseert die dan zelf. Deze knop zie je alleen als Traktor op de
-pc staat.
+What comes along: Traktor's analysis (BPM, key, beatgrid, hot cues, loops,
+ratings and colours), your Traktor playlists and your PlaylistFlac playlists
+in Spotify order. Tracks Traktor doesn't know yet come along without analysis;
+rekordbox analyses those itself. You only see this button if Traktor is on the
+computer.
 
-Het resultaat is `data\rekordbox.xml`, het officiële importformaat van
-rekordbox. Traktors `collection.nml` wordt alleen gelezen, nooit aangepast.
+The result is `data\rekordbox.xml`, rekordbox's official import format.
+Traktor's `collection.nml` is only read, never changed.
 
-In rekordbox, één keer instellen:
+In rekordbox, set up once:
 
-1. *Voorkeuren → Geavanceerd → Database* (Preferences → Advanced → Database):
-   kies bij *rekordbox xml* het bestand `data\rekordbox.xml`.
-2. *Voorkeuren → Weergave → Lay-out* (View → Layout): vink *rekordbox xml* aan.
-3. Links in de boom staat nu *rekordbox xml*. Rechtsklik op een playlist of
-   map, *Importeren* (Import Playlist).
+1. *Preferences → Advanced → Database*: under *rekordbox xml*, choose the file
+   `data\rekordbox.xml`.
+2. *Preferences → View → Layout*: tick *rekordbox xml*.
+3. *rekordbox xml* now appears in the tree on the left. Right-click a playlist
+   or folder, *Import Playlist*.
 
-Goed om te weten:
+Good to know:
 
-- rekordbox bewaart BPM met twee decimalen. Aan het eind van een nummer kan
-  het grid daardoor hooguit enkele tientallen milliseconden van Traktor
-  afwijken.
-- Bij **mp3's** decoderen Traktor en rekordbox het begin soms net anders,
-  waardoor het grid een fractie kan verschuiven. Check bij een paar mp3's of
-  het klopt. Bij FLAC en WAV speelt dit niet.
-- Vanaf de opdrachtregel kan het ook: `app\Start.cmd -Rekordbox`.
+- rekordbox stores BPM with two decimals. At the end of a track the grid can
+  therefore be a few tens of milliseconds off from Traktor at most.
+- With **mp3s**, Traktor and rekordbox sometimes decode the start slightly
+  differently, so the grid can shift a fraction. Check a few mp3s. FLAC and
+  WAV don't have this.
+- It works from the command line too: `app\Start.cmd -Rekordbox`.
 
-## Playlists met meer dan 100 nummers
+## Playlists with more than 100 tracks
 
-Standaard ziet PlaylistFlac de **eerste 100 nummers** van een playlist; daar
-krijg je een melding van. Twee manieren om de hele lijst te krijgen:
+By default PlaylistFlac sees the **first 100 tracks** of a playlist, and tells
+you so. Two ways to get the whole list:
 
-### Spotify koppelen (optioneel, vereist Premium)
+### Connect Spotify (optional, requires Premium)
 
-Daarmee haalt PlaylistFlac je playlists helemaal op, ook als er later nummers
-bij komen. Spotify eist een eigen "developer app", en dat het account van die
-app **Premium** heeft. Het werkt alleen voor playlists die **van jou** zijn of
-waar je aan meewerkt; die van anderen blijven op 100.
+PlaylistFlac then fetches your playlists completely, also when tracks are
+added later. Spotify requires your own "developer app", and the account behind
+that app must have **Premium**. It only works for playlists that are **yours**
+or that you collaborate on; other people's stay at 100.
 
-1. Ga naar <https://developer.spotify.com/dashboard> en log in met je
-   Spotify-account.
-2. Klik **Create app**. Naam en beschrijving maken niet uit.
-3. Vul bij **Redirect URIs** precies `http://127.0.0.1:48721/callback` in en
-   klik *Add*.
-4. Vink bij de API's **Web API** aan, ga akkoord en klik **Save**.
-5. Open de app, ga naar **Settings** en kopieer de **Client ID** en (via
-   *View client secret*) het **Client secret**.
-6. In PlaylistFlac: tandwieltje, plak ze bij *Spotify koppelen*, **Opslaan**,
-   en dan **Inloggen met Spotify**. Geef in het Spotify-tabblad toestemming
-   (PlaylistFlac vraagt alleen om je playlists te lezen).
+1. Go to <https://developer.spotify.com/dashboard> and log in with your
+   Spotify account.
+2. Click **Create app**. Name and description don't matter.
+3. Under **Redirect URIs**, enter exactly `http://127.0.0.1:48721/callback` and
+   click *Add*.
+4. Under the APIs, tick **Web API**, accept and click **Save**.
+5. Open the app, go to **Settings** and copy the **Client ID** and (via
+   *View client secret*) the **Client secret**.
+6. In PlaylistFlac: gear icon, paste them under *Connect Spotify*, **Save**,
+   then **Log in with Spotify**. Give permission in the Spotify tab
+   (PlaylistFlac only asks to read your playlists).
 
-Wil een vriend jouw app gebruiken, voeg dan zijn Spotify-e-mail toe onder
-**User Management** van de app; anders maakt hij zijn eigen app. Uitloggen kan
-via het tandwieltje. De koppeling wordt bewaard in `data\spotify-token.json`.
+If a friend wants to use your app, add their Spotify email under **User
+Management** in the app; otherwise they make their own app. You can log out
+via the gear icon. The connection is stored in `data\spotify-token.json`.
 
-### CSV-export (zonder Premium)
+### CSV export (without Premium)
 
-Exporteer de playlist als CSV, bijv. met
-[exportify.app](https://exportify.app), en zet het pad in
-`data\instellingen.ini` onder `[playlists]`:
+Export the playlist as CSV, for example with
+[exportify.app](https://exportify.app), and put the path in
+`data\instellingen.ini` under `[playlists]`:
 
 ```ini
-Grote Playlist = C:\Users\jij\Downloads\grote_playlist.csv
+Big Playlist = C:\Users\you\Downloads\big_playlist.csv
 ```
 
-Bij nieuwe nummers moet je dan opnieuw exporteren.
+When tracks are added, you have to export again.
 
-## Hoe weet hij wat je al hebt?
+## How does it know what you already have?
 
-In `data\status` staat per playlist een `<id>.keuzes.json`: welk nummer binnen
-is (en in welke versie), en welke je hebt overgeslagen. Daardoor:
+`data\status` holds a `<id>.keuzes.json` per playlist: which track is in (and
+in which version), and which ones you skipped. Because of that:
 
-- worden nummers die je **zelf weggooit niet opnieuw** gedownload. Wil je ze
-  terug, gebruik dan *Opnieuw kiezen*.
-- wordt een nummer dat je van de playlist haalt **niet** uit je map verwijderd.
-  De tool voegt alleen toe.
+- tracks you **delete yourself aren't downloaded again**. Want them back? Use
+  *Choose again*.
+- a track you remove from the playlist is **not** deleted from your folder.
+  The tool only adds.
 
-## Delen met iemand anders
+## Sharing with someone else
 
-Open een opdrachtvenster in de map `app` en typ:
+Open a command window in the `app` folder and type:
 
 ```
 Start.cmd -Inpakken
 ```
 
-Dat maakt `release\PlaylistFlac-<versie>.zip` in de map PlaylistFlac. Elke
-versie krijgt een eigen zip, dus oudere blijven bewaard. Je map `data` (met je
-wachtwoord en je status) en de 115 MB aan sockseek gaan **niet** mee.
+That makes `release\PlaylistFlac-<version>.zip` in the PlaylistFlac folder.
+Each version gets its own zip, so older ones are kept. Your `data` folder (with
+your password and status) and the 115 MB of sockseek do **not** go along.
 
-## Problemen
+## Problems
 
-| wat je ziet | wat het is |
+| what you see | what it is |
 |---|---|
-| index.html blijft op *PlaylistFlac starten...* | de koppeling is er nog niet: dubbelklik eenmalig op `app\Start.cmd` (Mac: `app/Start.command`, Linux: `app/Start.sh`) |
-| Mac: *Start.command kan niet worden geopend* | zie [Op een Mac](#op-een-mac), stap 3: *Open toch* in Privacy en beveiliging |
-| Mac: Terminal zegt *PowerShell 7 nodig* | installeer PowerShell 7 (stap 1 bij [Op een Mac](#op-een-mac)) en dubbelklik opnieuw |
-| *Kan de Soulseek-server niet bereiken* | geen internet, of het netwerk blokkeert Soulseek (werk, school, soms een VPN) |
-| *Inloggen op Soulseek lukt niet* | verkeerd wachtwoord, of de naam is al van iemand anders: kies via het tandwieltje een andere |
-| *Playlist niet te lezen* | de playlist is privé, of de link klopt niet |
-| Spotify zegt *INVALID_CLIENT: Invalid redirect URI* | de Redirect URI in je Spotify-app is niet precies `http://127.0.0.1:48721/callback` |
-| *Poort 48721 is bezet* bij inloggen | een ander programma (zoals sockseek) wacht ook op Spotify; sluit dat en probeer opnieuw |
-| *Geen verbinding met PlaylistFlac* | het venster *PlaylistFlac* is gesloten; open index.html opnieuw |
-| een verkeerde versie gedownload | gooi het bestand weg en kies onder *Binnen* bij dat nummer *Opnieuw kiezen* |
-| *Python niet gevonden* bij Analyse installeren | installeer Python 3.13 van python.org (Windows: met *Add python.exe to PATH* aangevinkt), en open index.html opnieuw |
-| *Analyse installeren* mislukt halverwege | meestal de internetverbinding; klik nog eens, hij gaat verder waar hij was |
+| index.html stays on *Starting PlaylistFlac...* | the link isn't there yet: double-click `app\Start.cmd` once (Mac: `app/Start.command`, Linux: `app/Start.sh`) |
+| Mac: *Start.command can't be opened* | see [On a Mac](#on-a-mac), step 3: *Open Anyway* in Privacy & Security |
+| Mac or Linux: the terminal says *PlaylistFlac needs PowerShell 7* | install PowerShell 7 (step 1 under [On a Mac](#on-a-mac) or [On Linux](#on-linux)) and start again |
+| *Can't reach the Soulseek server* | no internet, or the network blocks Soulseek (work, school, sometimes a VPN) |
+| *Can't log in to Soulseek* | wrong password, or the name already belongs to someone else: choose another one under the gear icon |
+| *Can't read the Spotify playlist* | the playlist is private, or the link isn't right |
+| Spotify says *INVALID_CLIENT: Invalid redirect URI* | the Redirect URI in your Spotify app isn't exactly `http://127.0.0.1:48721/callback` |
+| *Port 48721 is in use* when logging in | another program (such as sockseek) is also waiting for Spotify; close it and try again |
+| *No connection to PlaylistFlac* | the *PlaylistFlac* window was closed; open index.html again |
+| the wrong version was downloaded | delete the file and choose *Choose again* on that track under *Downloaded* |
+| *Python not found* when installing the analysis | install Python 3.13 from python.org (Windows: with *Add python.exe to PATH* ticked), and open index.html again |
+| *Install analysis* fails halfway | usually the internet connection; click again, it carries on where it was |
 
-Alle details van de laatste taak staan in `data\status\laatste-run.log`.
+All details of the last task are in `data\status\laatste-run.log`.
 
-## Voor gevorderden
+## For advanced users
 
-- `app\Start.cmd -Console` werkt zonder browser, met vragen in het venster.
-  `-Console -Proef` zoekt en laat de versies zien zonder te downloaden.
-- `app\Start.cmd -Afmelden` haalt de `playlistflac://`-koppeling weer uit
-  Windows (alleen voor jouw gebruiker; er waren geen adminrechten nodig). Op
-  een Mac haalt `./Start.command -Afmelden` het app'je `PlaylistFlac.app` weg,
-  op Linux haalt `./Start.sh -Afmelden` `playlistflac.desktop` uit je appmenu.
-- Alle instellingen staan ook als tekst in `data\instellingen.ini`, met uitleg
-  erbij. Daar staat ook `versie-kiezen = uit` voor het oude gedrag: geen keuze,
-  sockseek pakt de versie met dezelfde lengte als op Spotify.
-- `app\Start.cmd -Stil` start de interface zonder `playlistflac://`-koppeling,
-  snelkoppeling of browser. Handig om een kopie te testen.
+- `app\Start.cmd -Console` works without a browser, asking questions in the
+  window (in Dutch). `-Console -Proef` searches and shows the versions without
+  downloading.
+- `app\Start.cmd -Afmelden` removes the `playlistflac://` link from Windows
+  again (only for your user; no admin rights were needed). On a Mac,
+  `./Start.command -Afmelden` removes the `PlaylistFlac.app` helper; on Linux,
+  `./Start.sh -Afmelden` removes `playlistflac.desktop` from your app menu.
+- All settings are also in `data\instellingen.ini` as text, with explanations
+  (in Dutch). There you'll also find `versie-kiezen = uit` for the old
+  behaviour: no choice, sockseek takes the version with the same length as on
+  Spotify; and `taal = auto`, `nl` or `en` for the language.
+- `app\Start.cmd -Stil` starts the interface without the `playlistflac://`
+  link, shortcut or browser. Handy for testing a copy.
+- When you add text to the interface, add it to `ui\lang-en.js` as well. The
+  test (`tests\Test-PlaylistFlac.ps1`) and the demo in English
+  (`index.html?demo&lang=en`) show what's still missing.
 
-## Mappen
+## Folders
 
-| map / bestand | |
+| folder / file | |
 |---|---|
-| `index.html` | de interface; openen = starten. Met `?demo` erachter: proberen met verzonnen playlists |
-| `ui\` | opmaak en scripts van de interface, ook de uitleg per onderdeel (`rondleiding.js`) en de demo (`demo.js`) |
-| `docs\` | de screenshot voor deze README |
-| `release\` | de zips om te delen, een per versie (alleen bij jou, niet in de zip) |
-| `tests\` | controles voor wie aan PlaylistFlac werkt: `powershell -File tests\Test-PlaylistFlac.ps1` (niet in de zip) |
-| `app\` | het programma: `PlaylistFlac.ps1` met zijn onderdelen in `app\lib`, `Start.cmd` (Windows), `Start.command` (Mac), `Start.sh` (Linux), de analyse in `app\analyse`, en sockseek in `app\bin` |
-| `PlaylistFlac.app` | alleen op een Mac: het app'je dat de tool start en `playlistflac://` afhandelt; maakt de tool zelf |
-| `data\` | jouw instellingen en status. Niet delen, er staat je wachtwoord in. Een nieuwe versie haal je met de updateknop linksonder; die laat `data\` staan. |
-| `data\export` | de geanalyseerde playlists voor Traktor en rekordbox |
-| `data\analyse` | Python met PyTorch voor de analyse (ruim 1 GB, alleen als je die installeert) |
+| `index.html` | the interface; opening it starts the tool. Add `?demo` to try it with made-up playlists |
+| `ui\` | the interface's styles and scripts, including the tips (`rondleiding.js`), the demo (`demo.js`) and the English texts (`lang-en.js`) |
+| `docs\` | the screenshot for this README (English: `README.md`, Dutch: `README.nl.md`) |
+| `release\` | the zips for sharing, one per version (only on your computer, not in the zip) |
+| `tests\` | checks for whoever works on PlaylistFlac: `powershell -File tests\Test-PlaylistFlac.ps1` (not in the zip) |
+| `app\` | the program: `PlaylistFlac.ps1` with its parts in `app\lib`, `Start.cmd` (Windows), `Start.command` (Mac), `Start.sh` (Linux), the analysis in `app\analyse`, and sockseek in `app\bin` |
+| `PlaylistFlac.app` | Mac only: the helper that starts the tool and handles `playlistflac://`; the tool makes it itself |
+| `data\` | your settings and status. Don't share it, your password is in there. Get a new version with the update button at the bottom left; it leaves `data\` alone. |
+| `data\export` | the analysed playlists for Traktor and rekordbox |
+| `data\analyse` | Python with PyTorch for the analysis (just over 1 GB, only if you install it) |
 
-Gebruik het voor muziek waar je het recht toe hebt.
+Use it for music you have the rights to.
 
 ## Copyright
 
 Copyright (c) 2026 WiWi Audio.
 
-Gebruikt werk van anderen:
+Third-party work used:
 
-- [sockseek](https://github.com/fiso64/sockseek) van fiso64 (GPL-3.0) doet het
-  zoeken en downloaden op Soulseek. Het zit niet in deze zip; PlaylistFlac
-  haalt het bij de eerste start van GitHub.
-- De lettertypes Unbounded en Figtree (SIL Open Font License) komen van Google
+- [sockseek](https://github.com/fiso64/sockseek) by fiso64 (GPL-3.0) does the
+  searching and downloading on Soulseek. It isn't in this zip; PlaylistFlac
+  fetches it from GitHub the first time it starts.
+- The Unbounded and Figtree typefaces (SIL Open Font License) come from Google
   Fonts.
-- Het tandwiel-icoon komt uit Material Icons van Google (Apache-licentie 2.0).
-- De analyse gebruikt [Beat This!](https://github.com/CPJKU/beat_this) van
-  het Institute of Computational Perception, JKU Linz (MIT-licentie), plus
-  [PyTorch](https://pytorch.org) (BSD) en [librosa](https://librosa.org)
-  (ISC). Die zitten niet in deze zip; ze worden geïnstalleerd als je de
-  analyse aanzet.
+- The gear icon comes from Google's Material Icons (Apache License 2.0).
+- The analysis uses [Beat This!](https://github.com/CPJKU/beat_this) from the
+  Institute of Computational Perception, JKU Linz (MIT License), plus
+  [PyTorch](https://pytorch.org) (BSD) and [librosa](https://librosa.org)
+  (ISC). They aren't in this zip; they're installed when you turn on the
+  analysis.

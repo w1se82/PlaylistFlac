@@ -137,8 +137,11 @@ const TOUR = (() => {
   function show(h) {
     active = { hint: h };
     root.style.setProperty("--tour-c", `var(${h.c})`);
-    card.querySelector("#tour-title").textContent = h.title;
-    card.querySelector("#tour-text").innerHTML = h.text;
+    // vertalen pas nu: bij het laden van dit script is de taal nog niet bekend
+    card.querySelector("#tour-title").textContent = t(h.title);
+    card.querySelector("#tour-text").innerHTML = t(h.text);
+    card.querySelector(".tour-off").textContent = t("Uitleg uitzetten");
+    card.querySelector(".tour-ok").textContent = t("Snap ik");
     root.hidden = false;
     cue.classList.remove("drop"); void cue.offsetWidth; cue.classList.add("drop");
     place();

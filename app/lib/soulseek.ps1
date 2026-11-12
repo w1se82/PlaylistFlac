@@ -4,7 +4,7 @@
 # --- sockseek ophalen als hij er nog niet is ------------------------------
 
 function Install-Sockseek {
-    Say 'sockseek (de Soulseek-downloader) ophalen bij GitHub...' Cyan
+    Say (L 'sockseek (de Soulseek-downloader) ophalen bij GitHub...' 'Fetching sockseek (the Soulseek downloader) from GitHub...') Cyan
     $rel = Invoke-RestMethod -UseBasicParsing 'https://api.github.com/repos/fiso64/sockseek/releases/latest'
     $want = if ($OnWin) { '*win-x64.zip' }
             elseif ($OnMac) {
@@ -12,7 +12,7 @@ function Install-Sockseek {
                 if ("$([Runtime.InteropServices.RuntimeInformation]::OSArchitecture)" -eq 'Arm64') { '*osx-arm64.tar.gz' } else { '*osx-x64.tar.gz' }
             } else { '*linux-x64.tar.gz' }
     $asset = $rel.assets | Where-Object { $_.name -like $want } | Select-Object -First 1
-    if (-not $asset) { throw "Geen sockseek voor deze computer gevonden op GitHub ($want)." }
+    if (-not $asset) { throw (L "Geen sockseek voor deze computer gevonden op GitHub ($want)." "No sockseek for this computer found on GitHub ($want).") }
     New-Item -ItemType Directory -Force $BinDir | Out-Null
     $archive = Join-Path $BinDir $asset.name
     Invoke-WebRequest -UseBasicParsing $asset.browser_download_url -OutFile $archive
@@ -20,7 +20,7 @@ function Install-Sockseek {
         Expand-Archive $archive $BinDir -Force
     } else {
         & tar -xzf $archive -C $BinDir
-        if ($LASTEXITCODE) { throw 'sockseek uitpakken mislukte.' }
+        if ($LASTEXITCODE) { throw (L 'sockseek uitpakken mislukte.' 'Unpacking sockseek failed.') }
         # staat hij in een submap, dan naar app/bin zelf
         if (-not (Test-Path $Exe)) {
             $found = Get-ChildItem $BinDir -Recurse -File -Filter 'sockseek' | Select-Object -First 1
@@ -36,8 +36,8 @@ function Install-Sockseek {
         }
     }
     Remove-Item $archive
-    if (-not (Test-Path $Exe)) { throw 'sockseek staat na het uitpakken niet in app/bin.' }
-    Say "sockseek $($rel.tag_name) geinstalleerd." Green
+    if (-not (Test-Path $Exe)) { throw (L 'sockseek staat na het uitpakken niet in app/bin.' 'sockseek is not in app/bin after unpacking.') }
+    Say (L "sockseek $($rel.tag_name) geinstalleerd." "sockseek $($rel.tag_name) installed.") Green
 }
 
 # Zonder verbinding blijft sockseek eindeloos opnieuw inloggen; dus eerst kijken.
@@ -54,6 +54,7 @@ function Test-Soulseek {
 }
 
 $NoSoulseekMsg = 'Kan de Soulseek-server niet bereiken (server.slsknet.org, poort 2242). Geen internet, of een firewall/netwerk (school, werk, VPN) blokkeert Soulseek.'
+$NoSoulseekMsgEn = "Can't reach the Soulseek server (server.slsknet.org, port 2242). No internet, or a firewall/network (school, work, VPN) is blocking Soulseek."
 
 # --- Soulseek -------------------------------------------------------------
 
@@ -179,8 +180,8 @@ function Search-Tracks($tracks, $key) {
             $st.Started++
             $st.Current = "$($ev.data.artist) - $($ev.data.title)"
             Say ("      zoekt {0,2}/{1}: {2}" -f $st.Started, $total, $st.Current) DarkGray
-            if ($st.Started -eq 1) { Add-TaskLog 'Ingelogd op Soulseek' }
-            Add-TaskLog ("Zoeken {0}/{1}: {2}" -f $st.Started, $total, $st.Current)
+            if ($st.Started -eq 1) { Add-TaskLog (L 'Ingelogd op Soulseek' 'Logged in to Soulseek') }
+            Add-TaskLog ((L 'Zoeken {0}/{1}: {2}' 'Searching {0}/{1}: {2}') -f $st.Started, $total, $st.Current)
         } elseif ($ev.type -eq 'track_state') {
             $st.Done++
         }
@@ -188,24 +189,24 @@ function Search-Tracks($tracks, $key) {
         & $show
     }
     Update-Task @{ phase = 'inloggen'; done = 0; total = $total; current = '' } -Force
-    Add-TaskLog "Inloggen op Soulseek als $($cfg['soulseek-gebruiker'])"
+    Add-TaskLog (L "Inloggen op Soulseek als $($cfg['soulseek-gebruiker'])" "Logging in to Soulseek as $($cfg['soulseek-gebruiker'])")
 
     $res = Invoke-Sockseek @($csv, '--input-type', 'csv', '--config', $ConfPath, '--print', 'json-all',
         '--no-skip-existing', '--no-write-index', '--log-file', $LogFile) $onEvent $show -StartTimeout 75 -StallTimeout 300
     Write-Progress -Activity 'Zoeken op Soulseek' -Completed
     if ($res.TimedOut -eq 'start') {
-        Add-TaskLog 'Na 75 seconden nog niet ingelogd; gestopt'
-        throw 'Inloggen op Soulseek lukt niet. Klopt je naam/wachtwoord? Is de naam misschien al van iemand anders? (zie status\laatste-run.log)'
+        Add-TaskLog (L 'Na 75 seconden nog niet ingelogd; gestopt' 'Still not logged in after 75 seconds; stopped')
+        throw (L 'Inloggen op Soulseek lukt niet. Klopt je naam/wachtwoord? Is de naam misschien al van iemand anders? (zie status\laatste-run.log)' "Can't log in to Soulseek. Is your name/password right? Maybe the name already belongs to someone else? (see status\laatste-run.log)")
     }
-    if ($res.TimedOut) { throw 'Soulseek reageert al 5 minuten niet meer; verbinding weggevallen?' }
-    if ($res.ExitCode -gt 1) { throw "sockseek stopte met foutcode $($res.ExitCode) (zie status\laatste-run.log)." }
+    if ($res.TimedOut) { throw (L 'Soulseek reageert al 5 minuten niet meer; verbinding weggevallen?' 'Soulseek has not responded for 5 minutes; connection lost?') }
+    if ($res.ExitCode -gt 1) { throw (L "sockseek stopte met foutcode $($res.ExitCode) (zie status\laatste-run.log)." "sockseek stopped with error code $($res.ExitCode) (see status\laatste-run.log).") }
     Say "      zoeken klaar in $(Format-Elapsed $st.T0)" DarkGray
-    Add-TaskLog "Zoeken klaar in $(Format-Elapsed $st.T0)"
+    Add-TaskLog (L "Zoeken klaar in $(Format-Elapsed $st.T0)" "Search ready in $(Format-Elapsed $st.T0)")
 
     # een regel JSON per nummer, in dezelfde volgorde als de lijst
     $lines = @($res.Lines | Where-Object { $_ -match '^\s*\[\s*(\{|\])' })
     if ($lines.Count -ne $tracks.Count) {
-        throw "sockseek gaf $($lines.Count) resultaatregels voor $($tracks.Count) nummers."
+        throw (L "sockseek gaf $($lines.Count) resultaatregels voor $($tracks.Count) nummers." "sockseek returned $($lines.Count) result lines for $($tracks.Count) tracks.")
     }
     # PowerShell 5.1 geeft een JSON-array als een geheel terug; foreach pakt hem uit
     $perTrack = New-Object System.Collections.ArrayList
@@ -238,19 +239,19 @@ function Download-Picks($picks, $tmpRoot, [int]$Rounds = 4) {
         param($ev)
         if ($ev.type -eq 'download_start') {
             $st.Current = Get-RemoteStem $ev.data.filename
-            $st.Pct = 0; $st.Status = 'downloaden...'
+            $st.Pct = 0; $st.Status = L 'downloaden...' 'downloading...'
             $st.Size = [double]$sizes[(Flat $st.Current)]
             if (-not $st.Size -and [double]$ev.data.size -gt 1MB) { $st.Size = [double]$ev.data.size }
             $mb = if ($st.Size) { ' ({0:N1} MB)' -f ($st.Size / 1MB) } else { '' }
-            Add-TaskLog "Start bij $($ev.data.username): $($st.Current)$mb"
+            Add-TaskLog ((L 'Start bij' 'Starting from') + " $($ev.data.username): $($st.Current)$mb")
         } elseif ($ev.type -eq 'track_state' -and $ev.data.terminalOutcome -eq 'Failed') {
             $why = switch ("$($ev.data.failureReason)") {
-                'AllDownloadsFailed'   { 'bron gaf het bestand niet (offline, wachtrij of geweigerd)' }
-                'OutOfDownloadRetries' { 'te vaak onderbroken' }
-                'NoSearchResults'      { 'niet meer gevonden bij die bron' }
+                'AllDownloadsFailed'   { L 'bron gaf het bestand niet (offline, wachtrij of geweigerd)' 'source did not send the file (offline, queued or refused)' }
+                'OutOfDownloadRetries' { L 'te vaak onderbroken' 'interrupted too often' }
+                'NoSearchResults'      { L 'niet meer gevonden bij die bron' 'no longer found at that source' }
                 default                { "$($ev.data.failureReason)" }
             }
-            Add-TaskLog "Mislukt: $($ev.data.title) - $why"
+            Add-TaskLog ((L 'Mislukt' 'Failed') + ": $($ev.data.title) - $why")
         } elseif ($ev.type -eq 'download_progress') {
             $st.Pct = [double]$ev.data.percent
             $tot = [double]$ev.data.totalBytes
@@ -284,13 +285,13 @@ function Download-Picks($picks, $tmpRoot, [int]$Rounds = 4) {
         $links = @($links | Select-Object -Unique)
         [IO.File]::WriteAllLines($list, [string[]]$links, $Utf8)
         Say "      ronde $($round + 1): $($active.Count) bestand(en) tegelijk proberen..." DarkGray
-        Add-TaskLog "Ronde $($round + 1): $($active.Count) bestand(en) tegelijk proberen"
+        Add-TaskLog (L "Ronde $($round + 1): $($active.Count) bestand(en) tegelijk proberen" "Round $($round + 1): trying $($active.Count) file(s) at once")
         Update-Task @{ phase = 'downloaden'; round = $round + 1; done = (& $done); total = $total } -Force
 
         $res = Invoke-Sockseek @($list, '--input-type', 'list', '--config', $ConfPath, '--output-dir', $dir,
             '--no-write-index', '--log-file', $LogFile) $onEvent $show -StartTimeout 90 -StallTimeout 120
-        if ($res.TimedOut -eq 'start') { Add-TaskLog 'Geen enkele bron reageerde binnen 90 seconden' }
-        elseif ($res.TimedOut) { Add-TaskLog '2 minuten geen voortgang meer; ronde afgebroken' }
+        if ($res.TimedOut -eq 'start') { Add-TaskLog (L 'Geen enkele bron reageerde binnen 90 seconden' 'No source responded within 90 seconds') }
+        elseif ($res.TimedOut) { Add-TaskLog (L '2 minuten geen voortgang meer; ronde afgebroken' 'No progress for 2 minutes; round aborted') }
 
         # bestanden terugkoppelen aan de keuzes via de oorspronkelijke bestandsnaam
         $files = @(Get-ChildItem $dir -Recurse -File |
@@ -302,15 +303,15 @@ function Download-Picks($picks, $tmpRoot, [int]$Rounds = 4) {
                 $p.File = $hit
                 $p.Source = "$($p.Candidates[$round].u)|$($p.Candidates[$round].f)"
                 Say "      binnen: $($p.Title)" Green
-                Add-TaskLog "Binnen: $($p.Title)"
+                Add-TaskLog ((L 'Binnen' 'Done') + ": $($p.Title)")
             }
         }
-        Add-TaskLog ("Ronde {0} klaar: {1} van {2} binnen" -f ($round + 1), (& $done), $total)
+        Add-TaskLog ((L 'Ronde {0} klaar: {1} van {2} binnen' 'Round {0} ready: {1} of {2} downloaded') -f ($round + 1), (& $done), $total)
     }
     Write-Progress -Activity 'Downloaden' -Completed
     Update-Task @{ done = (& $done) } -Force
     foreach ($p in @($picks | Where-Object { -not $_.File })) {
-        Add-TaskLog "Niet gelukt na $([math]::Min($Rounds, @($p.Candidates).Count)) bron(nen): $($p.Title)"
+        Add-TaskLog (L "Niet gelukt na $([math]::Min($Rounds, @($p.Candidates).Count)) bron(nen): $($p.Title)" "Failed after $([math]::Min($Rounds, @($p.Candidates).Count)) source(s): $($p.Title)")
     }
 }
 
@@ -355,7 +356,7 @@ function Save-Picks($picks, $outDir, $choicesPath) {
     foreach ($p in $picks) {
         if (-not $p.File) {
             Say "   mislukt, volgende keer opnieuw: $($p.Title)" Yellow
-            Add-TaskLog "Niet gelukt: $($p.Title)"
+            Add-TaskLog ((L 'Niet gelukt' 'Failed') + ": $($p.Title)")
             continue
         }
         try {
@@ -367,14 +368,14 @@ function Save-Picks($picks, $outDir, $choicesPath) {
             } elseif ($done.Source -eq $p.Source) {
                 # twee Spotify-uitgaven van hetzelfde nummer, zelfde bestand: een is genoeg
                 Remember-Choice $p.Track $p.Group.Display $done.Dest $choicesPath
-                Add-TaskLog "Staat dubbel op de playlist, een bestand is genoeg: $($p.Title)"
+                Add-TaskLog ((L 'Staat dubbel op de playlist, een bestand is genoeg' 'On the playlist twice, one file is enough') + ": $($p.Title)")
             } else {
-                throw 'een ander nummer gebruikte dezelfde bestandsnaam'
+                throw (L 'een ander nummer gebruikte dezelfde bestandsnaam' 'another track used the same file name')
             }
             $ok++
         } catch {
             Say "   niet opgeslagen: $($p.Title) - $($_.Exception.Message)" Yellow
-            Add-TaskLog "Niet opgeslagen: $($p.Title) - $($_.Exception.Message)"
+            Add-TaskLog ((L 'Niet opgeslagen' 'Not saved') + ": $($p.Title) - $($_.Exception.Message)")
         }
     }
     return $ok

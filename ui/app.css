@@ -356,10 +356,15 @@ dialog > form > p.hint { margin-bottom: 18px; }
 .field { display: grid; gap: 6px; margin-bottom: 14px; }
 .field label { font-size: 14px; font-weight: 600; }
 .field .help { font-size: 13px; color: var(--muted); }
-.field input[type=text], .field input[type=url] {
+.field input[type=text], .field input[type=url], .field select {
   background: var(--bg); border: 1px solid var(--line); border-radius: 12px; padding: 10px 12px; width: 100%;
+  font: inherit; color: inherit;
 }
-.field input:focus { border-color: var(--hot); outline: none; box-shadow: 0 0 0 3px var(--hot-soft); }
+.field input:focus, .field select:focus { border-color: var(--hot); outline: none; box-shadow: 0 0 0 3px var(--hot-soft); }
+/* taal kiezen in de introductie, rechtsboven; de huidige taal staat aan */
+.ob-lang { float: right; display: flex; gap: 2px; margin: -6px -6px 0 0; }
+.ob-lang .link { padding: 4px 8px; font-size: 13px; }
+.ob-lang .link[aria-pressed="true"] { color: var(--text); font-weight: 700; }
 .inline { display: flex; gap: 8px; }
 .inline input { flex: 1; min-width: 0; }
 .check { display: flex; gap: 12px; align-items: flex-start; margin-bottom: 12px; cursor: pointer; }

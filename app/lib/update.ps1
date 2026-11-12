@@ -67,14 +67,14 @@ function Install-UpdateFiles($new, $work) {
             if (Test-Path -LiteralPath $bak) { Copy-Item -LiteralPath $bak -Destination (Join-Path $Root $rel) -Force }
         }
         foreach ($f in $added) { if (Test-Path -LiteralPath $f) { Remove-Item -LiteralPath $f -Force } }
-        throw "Bijwerken mislukt, de oude versie is teruggezet: $($_.Exception.Message)"
+        throw ((L 'Bijwerken mislukt, de oude versie is teruggezet' 'Update failed, the old version has been restored') + ": $($_.Exception.Message)")
     }
 }
 
 function Install-Update {
-    if (Task-Running) { throw 'Er loopt nog een taak. Bijwerken kan zodra die klaar is.' }
+    if (Task-Running) { throw (L 'Er loopt nog een taak. Bijwerken kan zodra die klaar is.' 'A task is still running. You can update once it is done.') }
     $latest = Get-LatestRelease
-    if (-not $latest -or (Compare-AppVersion $latest.Version $Version) -le 0) { throw 'Je hebt de nieuwste versie al.' }
+    if (-not $latest -or (Compare-AppVersion $latest.Version $Version) -le 0) { throw (L 'Je hebt de nieuwste versie al.' 'You already have the latest version.') }
     $work = Join-Path $StatusDir 'update'
     if (Test-Path -LiteralPath $work) { Remove-Item -LiteralPath $work -Recurse -Force }
     New-Item -ItemType Directory -Force $work | Out-Null
@@ -85,20 +85,20 @@ function Install-Update {
     # eerst controleren of dit echt een werkende versie is; pas dan iets vervangen
     $script = Join-Path (Join-Path $new 'app') 'PlaylistFlac.ps1'
     foreach ($need in (Join-Path $new 'index.html'), $script, (Join-Path (Join-Path (Join-Path $new 'app') 'analyse') 'analyse.py')) {
-        if (-not (Test-Path -LiteralPath $need)) { throw 'De download is niet compleet. Er is niets veranderd.' }
+        if (-not (Test-Path -LiteralPath $need)) { throw (L 'De download is niet compleet. Er is niets veranderd.' 'The download is incomplete. Nothing was changed.') }
     }
-    if (-not (Select-String -LiteralPath $script -SimpleMatch "'$($latest.Version)'" -Quiet)) { throw 'De download hoort niet bij deze versie. Er is niets veranderd.' }
+    if (-not (Select-String -LiteralPath $script -SimpleMatch "'$($latest.Version)'" -Quiet)) { throw (L 'De download hoort niet bij deze versie. Er is niets veranderd.' "The download doesn't match this version. Nothing was changed.") }
     # vanaf 1.4.0 staat het script in stukken in app\lib en de interface deels in ui\
     $libNew = Join-Path (Join-Path $new 'app') 'lib'
     if ((Select-String -LiteralPath $script -SimpleMatch '$LibParts' -Quiet) -and
         -not ((Test-Path -LiteralPath $libNew) -and (Test-Path -LiteralPath (Join-Path (Join-Path $new 'ui') 'app.js')))) {
-        throw 'De download is niet compleet. Er is niets veranderd.'
+        throw (L 'De download is niet compleet. Er is niets veranderd.' 'The download is incomplete. Nothing was changed.')
     }
     $scripts = @($script) + @(if (Test-Path -LiteralPath $libNew) { Get-ChildItem -LiteralPath $libNew -Filter '*.ps1' | ForEach-Object { $_.FullName } })
     foreach ($s in $scripts) {
         $errs = $null
         [void][Management.Automation.Language.Parser]::ParseFile($s, [ref]$null, [ref]$errs)
-        if ($errs) { throw 'De download bevat een fout. Er is niets veranderd.' }
+        if ($errs) { throw (L 'De download bevat een fout. Er is niets veranderd.' 'The download contains an error. Nothing was changed.') }
     }
     Install-UpdateFiles $new $work
     if (-not $OnWin) {

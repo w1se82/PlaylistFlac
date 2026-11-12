@@ -108,8 +108,8 @@ function Get-SpotifyTracks($ref) {
     if ($HasSpotifyApp -and (Read-SpotifyToken)) {
         try { $api = Get-SpotifyApiTracks $ref } catch {
             $code = $_.Exception.Response.StatusCode.value__
-            $apiError = if ($code -in 403, 404) { 'Spotify geeft deze playlist niet via de API: hij is niet van jou en je werkt er niet aan mee.' }
-                        else { "Spotify-API: $($_.Exception.Message)" }
+            $apiError = if ($code -in 403, 404) { L 'Spotify geeft deze playlist niet via de API: hij is niet van jou en je werkt er niet aan mee.' "Spotify won't give this playlist through the API: it isn't yours and you don't collaborate on it." }
+                        else { "Spotify API: $($_.Exception.Message)" }
         }
     }
     try { $embed = Get-SpotifyEmbedTracks $ref } catch { $embedError = $_.Exception.Message }
@@ -161,10 +161,10 @@ function Run-SpotifyLogin($state, $uiPort) {
     $back = "http://localhost:$uiPort/"
     $listener = New-Object Net.Sockets.TcpListener([Net.IPAddress]::Loopback, 48721)
     try { $listener.Start() } catch {
-        Write-LoginStatus 'fout' 'Poort 48721 is bezet, dus Spotify kan niet terugkomen bij PlaylistFlac. Sluit andere programma''s die met Spotify inloggen (zoals sockseek) en probeer opnieuw.'
+        Write-LoginStatus 'fout' (L 'Poort 48721 is bezet, dus Spotify kan niet terugkomen bij PlaylistFlac. Sluit andere programma''s die met Spotify inloggen (zoals sockseek) en probeer opnieuw.' 'Port 48721 is in use, so Spotify cannot get back to PlaylistFlac. Close other programs that log in with Spotify (such as sockseek) and try again.')
         return
     }
-    Write-LoginStatus 'wachten' 'Wachten tot je bij Spotify toestemming geeft...'
+    Write-LoginStatus 'wachten' (L 'Wachten tot je bij Spotify toestemming geeft...' 'Waiting for you to give permission at Spotify...')
     $deadline = (Get-Date).AddMinutes(5)
     try {
         while ((Get-Date) -lt $deadline) {
@@ -181,9 +181,9 @@ function Run-SpotifyLogin($state, $uiPort) {
                 $q = Parse-Query $Matches.q
                 $ok = $false
                 if ($q['error']) {
-                    $msg = if ($q['error'] -eq 'access_denied') { 'Je hebt bij Spotify op Annuleren geklikt.' } else { "Spotify gaf een fout: $($q['error'])" }
+                    $msg = if ($q['error'] -eq 'access_denied') { L 'Je hebt bij Spotify op Annuleren geklikt.' 'You clicked Cancel at Spotify.' } else { (L 'Spotify gaf een fout' 'Spotify returned an error') + ": $($q['error'])" }
                 } elseif ($q['state'] -ne $state) {
-                    $msg = 'Deze inlogpoging hoort niet bij PlaylistFlac (verkeerde state). Probeer opnieuw.'
+                    $msg = L 'Deze inlogpoging hoort niet bij PlaylistFlac (verkeerde state). Probeer opnieuw.' "This login attempt doesn't belong to PlaylistFlac (wrong state). Try again."
                 } else {
                     try {
                         $tok = Invoke-RestMethod -Method Post -Uri 'https://accounts.spotify.com/api/token' -UseBasicParsing `
@@ -194,23 +194,23 @@ function Run-SpotifyLogin($state, $uiPort) {
                         $saved.user = if ($me.display_name) { $me.display_name } else { $me.id }
                         [IO.File]::WriteAllText($SpotifyTokenPath, ($saved | ConvertTo-Json), $Utf8)
                         $ok = $true
-                        $msg = "Ingelogd als $($saved.user)."
+                        $msg = L "Ingelogd als $($saved.user)." "Logged in as $($saved.user)."
                     } catch {
                         $err = try { $_.ErrorDetails.Message | ConvertFrom-Json } catch { $null }
                         $msg = switch ("$($err.error)") {
-                            'invalid_client' { 'De Client ID of het Client secret klopt niet. Kopieer ze opnieuw uit de instellingen van je Spotify-app.' }
-                            'invalid_grant'  { "Spotify keurde de inlogcode af ($($err.error_description)). Klopt de Redirect URI in je app precies? Probeer anders opnieuw." }
-                            default          { "Inloggen lukte niet: $(if ($err.error_description) { $err.error_description } else { $_.Exception.Message })" }
+                            'invalid_client' { L 'De Client ID of het Client secret klopt niet. Kopieer ze opnieuw uit de instellingen van je Spotify-app.' "The Client ID or Client secret isn't right. Copy them again from your Spotify app's settings." }
+                            'invalid_grant'  { L "Spotify keurde de inlogcode af ($($err.error_description)). Klopt de Redirect URI in je app precies? Probeer anders opnieuw." "Spotify rejected the login code ($($err.error_description)). Is the Redirect URI in your app exactly right? Otherwise try again." }
+                            default          { (L 'Inloggen lukte niet' 'Login failed') + ": $(if ($err.error_description) { $err.error_description } else { $_.Exception.Message })" }
                         }
                     }
                 }
                 Write-LoginStatus $(if ($ok) { 'ok' } else { 'fout' }) $msg
-                $title = if ($ok) { 'Gelukt!' } else { 'Dat ging mis' }
+                $title = if ($ok) { L 'Gelukt!' 'Done!' } else { L 'Dat ging mis' 'That went wrong' }
                 $html = "<!doctype html><meta charset=utf-8><title>PlaylistFlac</title>" +
                     "<meta http-equiv=refresh content='3;url=$back'>" +
                     "<body style='font:18px system-ui;background:#160f26;color:#f6f1ff;display:grid;place-items:center;height:100vh;margin:0'>" +
                     "<div style='max-width:36em;padding:24px'><h1 style='margin:0 0 12px'>$title</h1><p>$([Net.WebUtility]::HtmlEncode($msg))</p>" +
-                    "<p><a style='color:#3ee6ff' href='$back'>Terug naar PlaylistFlac</a></p></div>"
+                    "<p><a style='color:#3ee6ff' href='$back'>$(L 'Terug naar PlaylistFlac' 'Back to PlaylistFlac')</a></p></div>"
                 $body = $Utf8.GetBytes($html)
                 $head = [Text.Encoding]::ASCII.GetBytes("HTTP/1.1 200 OK`r`nContent-Type: text/html; charset=utf-8`r`nContent-Length: $($body.Length)`r`nConnection: close`r`n`r`n")
                 $stream.Write($head, 0, $head.Length); $stream.Write($body, 0, $body.Length)
@@ -219,7 +219,7 @@ function Run-SpotifyLogin($state, $uiPort) {
                 $client.Close()
             }
         }
-        Write-LoginStatus 'fout' 'Geen antwoord van Spotify binnen 5 minuten. Probeer opnieuw.'
+        Write-LoginStatus 'fout' (L 'Geen antwoord van Spotify binnen 5 minuten. Probeer opnieuw.' 'No answer from Spotify within 5 minutes. Try again.')
     } finally {
         $listener.Stop()
     }
@@ -233,7 +233,7 @@ function Get-SpotifyEmbedTracks($ref) {
     $wc.Headers.Add('User-Agent', 'Mozilla/5.0 (Windows NT 10.0; Win64; x64)')
     $html = $wc.DownloadString("https://open.spotify.com/embed/$($ref.Type)/$($ref.Id)")
     $m = [regex]::Match($html, '<script id="__NEXT_DATA__" type="application/json">(.*?)</script>', 'Singleline')
-    if (-not $m.Success) { throw 'Spotify gaf een onverwachte pagina terug.' }
+    if (-not $m.Success) { throw (L 'Spotify gaf een onverwachte pagina terug.' 'Spotify returned an unexpected page.') }
     $entity = ($m.Groups[1].Value | ConvertFrom-Json).props.pageProps.state.data.entity
     $tracks = foreach ($t in $entity.trackList) {
         [pscustomobject]@{
@@ -262,7 +262,7 @@ function Get-CsvTracks($path) {
     $cUri    = Pick 'Track URI', 'URI', 'uri'
     $cMs     = Pick 'Duration (ms)', 'duration_ms'
     $cSec    = Pick 'Length', 'length'
-    if (-not $cTitle -or -not $cArtist) { throw 'CSV mist een kolom voor titel of artiest.' }
+    if (-not $cTitle -or -not $cArtist) { throw (L 'CSV mist een kolom voor titel of artiest.' 'The CSV has no column for title or artist.') }
     foreach ($r in $rows) {
         $len = 0
         if ($cMs) { $len = [int][math]::Round([double]$r.$cMs / 1000) }

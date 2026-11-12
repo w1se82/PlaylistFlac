@@ -12,7 +12,7 @@ function Read-TaskStatus {
     $alive = $script:Worker -and -not $script:Worker.HasExited
     if ($t.state -eq 'bezig' -and -not $alive) {
         $t.state = 'fout'
-        $t.message = 'De taak stopte onverwacht. Kijk in status\laatste-run.log.'
+        $t.message = L 'De taak stopte onverwacht. Kijk in status\laatste-run.log.' 'The task stopped unexpectedly. See status\laatste-run.log.'
     }
     return $t
 }
@@ -31,6 +31,8 @@ $script:QueueId = 0
 
 function Add-ToQueue($task) {
     [void](Load-Config)
+    # meldingen van de taak in de taal van wie hem startte
+    $task.lang = $script:Lang
     if ($task.type -eq 'installeren') {
         # hoort bij geen playlist
         $script:QueueId++
@@ -40,7 +42,7 @@ function Add-ToQueue($task) {
         return
     }
     $pl = $cfg['playlists'][[int]$task.index]
-    if (-not $pl) { throw 'Die playlist bestaat niet (meer).' }
+    if (-not $pl) { throw (L 'Die playlist bestaat niet (meer).' 'That playlist no longer exists.') }
     $c = $script:PlCache[$pl.Source]
     $script:QueueId++
     $task.id = $script:QueueId
@@ -81,7 +83,8 @@ function Get-QueuedUris($src) {
 }
 
 function Start-Task($task) {
-    if (Task-Running) { throw 'Er loopt al een taak.' }
+    if (Task-Running) { throw (L 'Er loopt al een taak.' 'A task is already running.') }
+    if (-not $task.lang) { $task.lang = $script:Lang }
     $file = Join-Path $StatusDir 'taak-opdracht.json'
     [IO.File]::WriteAllText($file, ($task | ConvertTo-Json -Depth 6), $Utf8)
     if (Test-Path $TaskStatusPath) { Remove-Item $TaskStatusPath -Force }
@@ -95,13 +98,13 @@ function Stop-Task {
     else { try { $script:Worker.Kill($true) } catch { } }
     $script:Worker.WaitForExit(5000) | Out-Null
     $t = Read-TaskStatus
-    $state = @{ state = 'gestopt'; message = 'Gestopt.'; type = $(if ($t) { $t.type } else { '' }); index = $(if ($t) { $t.index } else { -1 }) }
+    $state = @{ state = 'gestopt'; message = (L 'Gestopt.' 'Stopped.'); type = $(if ($t) { $t.type } else { '' }); index = $(if ($t) { $t.index } else { -1 }) }
     [IO.File]::WriteAllText($TaskStatusPath, ($state | ConvertTo-Json -Compress), $Utf8)
 }
 
 function Get-PlaylistInfo([int]$i, [switch]$Refresh) {
     $pl = $cfg['playlists'][$i]
-    if (-not $pl) { throw 'Die playlist bestaat niet (meer).' }
+    if (-not $pl) { throw (L 'Die playlist bestaat niet (meer).' 'That playlist no longer exists.') }
     $c = $script:PlCache[$pl.Source]
     if ($Refresh -or -not $c -or ((Get-Date) - $c.At).TotalMinutes -gt 10) {
         $c = @{ At = (Get-Date); Info = (Resolve-Playlist $pl) }
@@ -191,6 +194,7 @@ function Get-AppState {
             musicDir = $cfg['muziekmap']; musicDirFull = $MusicDir
             alleenFlac = (Is-Yes $cfg['alleen-flac']); timSelector = (Is-Yes $cfg['tim-selector']); netteNamen = (Is-Yes $cfg['nette-namen'])
             voorkeur = $cfg['voorkeur-versie']
+            taal = $(if ("$($cfg['taal'])".ToLower() -in 'nl', 'en') { "$($cfg['taal'])".ToLower() } else { 'auto' })
             traktor = $(if ($null -eq $script:HasTraktor) { $script:HasTraktor = [bool](Find-TraktorCollection) }; $script:HasTraktor)
             spotify = $(
                 $tok = Read-SpotifyToken
@@ -204,6 +208,7 @@ function Get-AppState {
         }
         playlists = $lists
         rondleiding = (Read-Rondleiding)
+        lang = $script:Lang
         version = $Version
         task = (Read-TaskStatus)
         running = (Task-Running)
@@ -236,12 +241,13 @@ function Read-Body($ctx) {
 function Handle-Request($ctx, $port) {
     $req = $ctx.Request
     # Alleen deze pagina mag de server aansturen, geen andere website in je browser.
+    $script:Lang = Resolve-Lang $req
     $okHosts = "localhost:$port", "127.0.0.1:$port"
-    if ($req.Headers['Host'] -notin $okHosts) { Send-Json $ctx @{ error = 'Verboden.' } 403; return }
+    if ($req.Headers['Host'] -notin $okHosts) { Send-Json $ctx @{ error = (L 'Verboden.' 'Forbidden.') } 403; return }
     if ($req.HttpMethod -eq 'POST') {
         $origin = $req.Headers['Origin']
-        if ($origin -and $origin -notin ($okHosts | ForEach-Object { "http://$_" })) { Send-Json $ctx @{ error = 'Verboden.' } 403; return }
-        if ($req.ContentType -notlike 'application/json*') { Send-Json $ctx @{ error = 'Verwacht JSON.' } 415; return }
+        if ($origin -and $origin -notin ($okHosts | ForEach-Object { "http://$_" })) { Send-Json $ctx @{ error = (L 'Verboden.' 'Forbidden.') } 403; return }
+        if ($req.ContentType -notlike 'application/json*') { Send-Json $ctx @{ error = (L 'Verwacht JSON.' 'Expected JSON.') } 415; return }
     }
 
     $path = $req.Url.AbsolutePath
@@ -249,7 +255,7 @@ function Handle-Request($ctx, $port) {
     # stijl en scripts van de interface: alleen losse bestanden direct in ui\
     if ($req.HttpMethod -eq 'GET' -and $path -match '^/ui/[a-z0-9-]+\.(css|js)$') {
         $file = Join-Path $UiDir ($path.Substring(4))
-        if (-not (Test-Path -LiteralPath $file)) { Send-Json $ctx @{ error = 'Onbekend adres.' } 404; return }
+        if (-not (Test-Path -LiteralPath $file)) { Send-Json $ctx @{ error = (L 'Onbekend adres.' 'Unknown address.') } 404; return }
         $type = if ($Matches[1] -eq 'css') { 'text/css; charset=utf-8' } else { 'text/javascript; charset=utf-8' }
         Send-Response $ctx 200 $type ([IO.File]::ReadAllBytes($file))
         return
@@ -289,6 +295,7 @@ function Handle-Request($ctx, $port) {
             if ($b.voorkeur) { $v['voorkeur-versie'] = "$($b.voorkeur)".Trim() }
             if ($b.spotifyId) { $v['spotify-id'] = "$($b.spotifyId)".Trim() }
             if ($b.spotifySecret) { $v['spotify-secret'] = "$($b.spotifySecret)".Trim() }
+            if ("$($b.taal)" -in 'auto', 'nl', 'en') { $v['taal'] = "$($b.taal)" }
             Write-Settings $v $null
             Send-Json $ctx (Get-AppState)
         }
@@ -297,7 +304,7 @@ function Handle-Request($ctx, $port) {
             [void](Load-Config)
             $src = "$($b.src)".Trim()
             $name = "$($b.name)".Trim()
-            if (-not $src) { throw 'Plak eerst een Spotify-link.' }
+            if (-not $src) { throw (L 'Plak eerst een Spotify-link.' 'Paste a Spotify link first.') }
             $ref = Get-SpotifyRef $src
             if ($ref) { $src = "https://open.spotify.com/$($ref.Type)/$($ref.Id)" }
             $info = Resolve-Playlist @{ Name = $(if ($name) { $name } else { $null }); Source = $src }
@@ -369,7 +376,7 @@ function Handle-Request($ctx, $port) {
             $b = Read-Body $ctx
             $doen = @($b.doen | Where-Object { $AnaDoen -contains $_ })
             $formaten = @($b.formaten | Where-Object { $AnaFormaten -contains $_ })
-            if (-not $doen.Count -or -not $formaten.Count) { throw 'Kies wat je wilt analyseren en voor welke software.' }
+            if (-not $doen.Count -or -not $formaten.Count) { throw (L 'Kies wat je wilt analyseren en voor welke software.' 'Choose what to analyse and for which software.') }
             foreach ($i in @($b.indexes)) {
                 Add-ToQueue @{ type = 'analyseren'; index = [int]$i; doen = $doen; formaten = $formaten; opnieuw = [bool]$b.opnieuw; hele = [bool]$b.hele }
             }
@@ -377,11 +384,11 @@ function Handle-Request($ctx, $port) {
         }
         'POST /api/spotify/login' {
             [void](Load-Config)
-            if (-not $HasSpotifyApp) { throw 'Vul eerst de Client ID en het Client secret van je Spotify-app in.' }
+            if (-not $HasSpotifyApp) { throw (L 'Vul eerst de Client ID en het Client secret van je Spotify-app in.' 'Fill in the Client ID and Client secret of your Spotify app first.') }
             if ($script:LoginProc -and -not $script:LoginProc.HasExited) { try { $script:LoginProc.Kill() } catch { } }
             $state = [guid]::NewGuid().ToString('N')
-            Write-LoginStatus 'wachten' 'Spotify-pagina openen...'
-            $script:LoginProc = Start-Self "-SpotifyLogin $state -UiPort $port"
+            Write-LoginStatus 'wachten' (L 'Spotify-pagina openen...' 'Opening the Spotify page...')
+            $script:LoginProc = Start-Self "-SpotifyLogin $state -UiPort $port -Taal $script:Lang"
             Start-Sleep -Milliseconds 600      # even laten luisteren voor Spotify terugstuurt
             Open-Url (Get-SpotifyAuthorizeUrl $state)
             Send-Json $ctx @{ ok = $true }
@@ -416,7 +423,7 @@ function Handle-Request($ctx, $port) {
             Send-Json $ctx @{ ok = $true }
             $script:Quit = $true
         }
-        default { Send-Json $ctx @{ error = 'Onbekend adres.' } 404 }
+        default { Send-Json $ctx @{ error = (L 'Onbekend adres.' 'Unknown address.') } 404 }
     }
 }
 
@@ -460,7 +467,7 @@ function Sync-Exports {
     $script:SyncFile = $next.FullName
     $psi = New-Object Diagnostics.ProcessStartInfo
     $psi.FileName = $AnaPy
-    $psi.Arguments = (@('-I', $AnaScript, '--bijwerken', $next.FullName, '--collectie', $collectie) | ForEach-Object { Quote-Arg $_ }) -join ' '
+    $psi.Arguments = (@('-I', $AnaScript, '--bijwerken', $next.FullName, '--collectie', $collectie, '--taal', $script:Lang) | ForEach-Object { Quote-Arg $_ }) -join ' '
     $psi.UseShellExecute = $false
     $psi.CreateNoWindow = $true
     $script:SyncProc = [Diagnostics.Process]::Start($psi)
@@ -491,8 +498,8 @@ function Start-Ui {
     [void](Load-Config)
     # -Stil: niets aan de computer veranderen (testen vanuit een kopie)
     if (-not $Stil) {
-        try { Register-Protocol } catch { Say "Kon de playlistflac://-koppeling niet registreren: $($_.Exception.Message)" Yellow }
-        try { Add-DesktopShortcut } catch { Say "Kon geen snelkoppeling op het bureaublad zetten: $($_.Exception.Message)" Yellow }
+        try { Register-Protocol } catch { Say ((L 'Kon de playlistflac://-koppeling niet registreren' 'Could not register the playlistflac:// link') + ": $($_.Exception.Message)") Yellow }
+        try { Add-DesktopShortcut } catch { Say ((L 'Kon geen snelkoppeling op het bureaublad zetten' 'Could not put a shortcut on the desktop') + ": $($_.Exception.Message)") Yellow }
     }
     if (-not (Test-Path $Exe)) { Install-Sockseek }
     # Een taak die nog liep toen het venster dicht ging, is weg.
@@ -504,13 +511,13 @@ function Start-Ui {
         $l.Prefixes.Add("http://localhost:$port/")
         try { $l.Start(); $listener = $l; break } catch { $l.Close() }
     }
-    if (-not $listener) { Say 'Geen vrije poort gevonden voor de webinterface.' Red; return 1 }
+    if (-not $listener) { Say (L 'Geen vrije poort gevonden voor de webinterface.' 'No free port found for the web interface.') Red; return 1 }
 
     $url = "http://localhost:$port/"
     $Host.UI.RawUI.WindowTitle = 'PlaylistFlac'
     Say ''
-    Say "  PlaylistFlac $Version draait op $url" Cyan
-    Say '  Laat dit venster open (minimaliseren mag); sluiten = stoppen.'
+    Say (L "  PlaylistFlac $Version draait op $url" "  PlaylistFlac $Version is running at $url") Cyan
+    Say (L '  Laat dit venster open (minimaliseren mag); sluiten = stoppen.' '  Keep this window open (minimising is fine); closing it stops PlaylistFlac.')
     Say ''
     # Via index.html gestart? Die pagina stuurt zichzelf al door.
     if (-not $Link -and -not $Stil) { Open-Url $url }
@@ -540,9 +547,9 @@ function Start-Ui {
     }
     if ($script:Restart) {      # bijgewerkt: de nieuwe versie neemt het over; de pagina herlaadt zichzelf
         [void](Start-Self '-Link')
-        Say 'Bijgewerkt. De nieuwe versie is gestart; je kunt dit venster sluiten.' Green
+        Say (L 'Bijgewerkt. De nieuwe versie is gestart; je kunt dit venster sluiten.' 'Updated. The new version has started; you can close this window.') Green
         return 0
     }
-    Say 'Gestopt. Je kunt dit venster sluiten.'
+    Say (L 'Gestopt. Je kunt dit venster sluiten.' 'Stopped. You can close this window.')
     return 0
 }

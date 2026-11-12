@@ -53,7 +53,8 @@ param(
     [switch]$Rekordbox,
     [string]$SpotifyLogin,   # intern: wacht op de terugkeer van "Inloggen met Spotify"
     [int]$UiPort,
-    [switch]$Stil
+    [switch]$Stil,
+    [string]$Taal            # intern: nl of en, voor -SpotifyLogin (een taak krijgt hem via de opdracht)
 )
 
 $ErrorActionPreference = 'Stop'
@@ -80,7 +81,7 @@ $UiFile    = Join-Path $Root 'index.html'
 $LogFile   = Join-Path $StatusDir 'laatste-run.log'
 $Utf8      = New-Object System.Text.UTF8Encoding($false)
 $Ports     = 47821..47830
-$Version   = '1.4.2-beta'     # ook in README.md; de interface leest hem uit /api/state
+$Version   = '1.4.2-beta'     # ook in README.md en README.nl.md; de interface leest hem uit /api/state
 $UpdateRepo = 'w1se82/PlaylistFlac'     # hier haalt de updateknop nieuwe versies vandaan
 # analyse: het script staat in app\analyse, Python met PyTorch per computer in data\analyse
 $AnaScript = Join-Path (Join-Path $AppDir 'analyse') 'analyse.py'
@@ -91,12 +92,15 @@ $ExportDir = Join-Path $DataDir 'export'
 
 function Say($text, $color = 'Gray') { Write-Host $text -ForegroundColor $color }
 
+
 # --- onderdelen -------------------------------------------------------------
 # Volgorde maakt uit: later ingeladen onderdelen gebruiken variabelen van eerdere.
 # Dot-source in de scriptscope, zodat $script:-variabelen gedeeld blijven.
-$LibParts = 'platform', 'release', 'instellingen', 'soulseek', 'spotify', 'versies', 'playlist',
+$LibParts = 'taal', 'platform', 'release', 'instellingen', 'soulseek', 'spotify', 'versies', 'playlist',
             'console', 'taak', 'rekordbox', 'analyse', 'update', 'rondleiding', 'server', 'koppeling'
 foreach ($part in $LibParts) { . (Join-Path $LibDir "$part.ps1") }
+# taal van meldingen tot de interface iets anders zegt (zie app\lib\taal.ps1)
+$script:Lang = if ($Taal -in 'nl', 'en') { $Taal } else { Get-OsLang }
 
 if ($Inpakken) {
     # in release\ van de projectmap; die map zelf gaat niet mee in de zip
@@ -107,7 +111,7 @@ if ($Inpakken) {
     $stage = Join-Path ([IO.Path]::GetTempPath()) "PlaylistFlac-inpakken-$PID"
     $pkg = Join-Path $stage 'PlaylistFlac'
     New-Item -ItemType Directory -Force (Join-Path $pkg 'app') | Out-Null
-    Copy-Item (Join-Path $Root 'index.html'), (Join-Path $Root 'README.md') $pkg
+    Copy-Item (Join-Path $Root 'index.html'), (Join-Path $Root 'README.md'), (Join-Path $Root 'README.nl.md') $pkg
     $docs = Join-Path $Root 'docs'
     if (Test-Path $docs) { Copy-Item $docs (Join-Path $pkg 'docs') -Recurse }
     New-Item -ItemType Directory -Force (Join-Path $pkg 'ui') | Out-Null

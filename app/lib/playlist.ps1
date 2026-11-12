@@ -266,7 +266,7 @@ function Resolve-Playlist($pl) {
         try {
             $info = Get-SpotifyTracks $ref
         } catch {
-            throw "Spotify-playlist niet te lezen ($($_.Exception.Message)). Is hij openbaar? Prive-playlists kan de tool niet zien."
+            throw (L "Spotify-playlist niet te lezen ($($_.Exception.Message)). Is hij openbaar? Prive-playlists kan de tool niet zien." "Can't read the Spotify playlist ($($_.Exception.Message)). Is it public? The tool can't see private playlists.")
         }
         return @{ Name = $(if ($pl.Name) { $pl.Name } else { $info.Name }); Key = $ref.Id
                   Tracks = $info.Tracks; Cover = $info.Cover; Spotify = $true; Full = $info.Full; Note = $info.Note }
@@ -277,5 +277,5 @@ function Resolve-Playlist($pl) {
         return @{ Name = $name; Key = 'csv-' + (Safe-FileName $name); Tracks = @(Get-CsvTracks $path)
                   Cover = $null; Spotify = $false }
     }
-    throw "Snap deze regel niet: $src. Verwacht een Spotify-link (playlist of album) of het pad naar een CSV."
+    throw (L "Snap deze regel niet: $src. Verwacht een Spotify-link (playlist of album) of het pad naar een CSV." "Don't understand this line: $src. Expected a Spotify link (playlist or album) or the path to a CSV.")
 }

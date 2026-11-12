@@ -73,7 +73,7 @@ def checkpoint():
     last = None
     for url in CKPT_URLS:
         try:
-            say(t='log', msg=f'Model ophalen: {url.split("/")[2]}')
+            say(t='log', msg=T('Model ophalen', 'Fetching model') + f': {url.split("/")[2]}')
             tmp = path + '.part'
             with urllib.request.urlopen(url, context=ctx) as resp, open(tmp, 'wb') as fh:
                 shutil.copyfileobj(resp, fh)
@@ -537,6 +537,17 @@ def energy_estimate(y, bpm=None):
 # ---------------------------------------------------------------- schrijven
 
 CUE_NAMES = {'laad': 'Laad', 'break': 'Break', 'drop': 'Drop', 'uit-64': 'Uitmix -64', 'uit-32': 'Uitmix -32'}
+CUE_NAMES_EN = {'laad': 'Load', 'break': 'Break', 'drop': 'Drop', 'uit-64': 'Mix out -64', 'uit-32': 'Mix out -32'}
+# De namen in Traktor en rekordbox volgen --taal; het rapport houdt de Nederlandse
+# (de interface vertaalt die). Terugzoeken kent beide, zodat een oude .nml blijft werken.
+CUE_OUT = CUE_NAMES
+CUE_KIND = {**{v: k for k, v in CUE_NAMES.items()}, **{v: k for k, v in CUE_NAMES_EN.items()}}
+LANG = 'nl'
+
+
+def T(nl, en):
+    """Melding in de taal van de interface (--taal)."""
+    return en if LANG == 'en' else nl
 # Traktor-cuetypes: 0 cue, 2 fade-out, 3 laadpunt. Alleen de laatste uitmix is een
 # fade-out: in automode stopt Traktor op de eerste fade-out die hij tegenkomt.
 CUE_TYPES = {'laad': 3, 'uit-32': 2}
@@ -764,7 +775,7 @@ def write_nml(path, name, rows, known=None):
             x.append(f'<CUE_V2 NAME="AutoGrid" DISPL_ORDER="0" TYPE="4" START="{r["anchor"] * 1000:.6f}" LEN="0.000000" '
                      f'REPEATS="-1" HOTCUE="-1"><GRID BPM="{r["bpm"]:.6f}"></GRID></CUE_V2>')
         for h, (kind, t) in enumerate(r.get('cues', [])):
-            x.append(f'<CUE_V2 NAME="{h + 1} {CUE_NAMES[kind]}" DISPL_ORDER="0" TYPE="{CUE_TYPES.get(kind, 0)}" '
+            x.append(f'<CUE_V2 NAME="{h + 1} {CUE_OUT[kind]}" DISPL_ORDER="0" TYPE="{CUE_TYPES.get(kind, 0)}" '
                      f'START="{t * 1000:.6f}" LEN="0.000000" REPEATS="-1" HOTCUE="{h}"></CUE_V2>')
         x.append('</ENTRY>')
         entries.append('\n'.join(x)); keys.append(f'{volume}{dirn}{file}')
@@ -815,7 +826,7 @@ def write_rekordbox(path, name, rows):
             x.append(f'    <TEMPO Inizio="{start:.3f}" Bpm="{bpm:.2f}" Metro="4/4" Battito="{battito}"/>')
         for h, (kind, t) in enumerate(r.get('cues', [])):
             rgb = RB_CUE_RGB[CUE_TYPES.get(kind, 0)]
-            nm = quoteattr(f'{CUE_NAMES[kind]}')
+            nm = quoteattr(f'{CUE_OUT[kind]}')
             x.append(f'    <POSITION_MARK Name={nm} Type="0" Start="{t:.3f}" Num="{h}" Red="{rgb[0]}" Green="{rgb[1]}" Blue="{rgb[2]}"/>')
             x.append(f'    <POSITION_MARK Name={nm} Type="0" Start="{t:.3f}" Num="-1"/>')    # ook als memory cue
         x.append('  </TRACK>')
@@ -953,7 +964,7 @@ def seed_cache(cache, nml, rapport):
     except (OSError, ValueError, KeyError, ET.ParseError):
         return
     info = {t['bestand']: t for t in rap.get('tracks', [])}
-    kinds = {v: k for k, v in CUE_NAMES.items()}
+    kinds = CUE_KIND
     for e in entries:
         loc = e.find('LOCATION')
         p = location_path(loc.get('VOLUME', ''), loc.get('DIR', ''), loc.get('FILE', ''))
@@ -993,7 +1004,11 @@ def main():
     ap.add_argument('--bijwerken', help='een eerder gemaakte .nml bijwerken uit --collectie, zonder analyse')
     ap.add_argument('--cache', help='hier onthouden welke tracks al geanalyseerd zijn')
     ap.add_argument('--opnieuw', action='store_true', help='ook tracks die al geanalyseerd zijn opnieuw doen')
+    ap.add_argument('--taal', default='nl', choices=['nl', 'en'], help='taal van meldingen en cue-namen')
     a = ap.parse_args()
+    global LANG, CUE_OUT
+    LANG = a.taal
+    CUE_OUT = CUE_NAMES_EN if LANG == 'en' else CUE_NAMES
 
     if a.bijwerken:
         tracks, covers = update_export(a.bijwerken, read_collection(a.collectie))
@@ -1004,7 +1019,7 @@ def main():
         import torch, librosa, mutagen, beat_this  # noqa: F401  - alles aanwezig?
         say(t='log', msg=f'Python {sys.version.split()[0]}, torch {torch.__version__}, librosa {librosa.__version__}')
         checkpoint()
-        say(t='klaar', msg='Analyse is klaar voor gebruik')
+        say(t='klaar', msg=T('Analyse is klaar voor gebruik', 'The analysis is ready to use'))
         return
 
     doen = set(a.doen.split(','))

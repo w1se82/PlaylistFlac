@@ -60,10 +60,10 @@ function Load-Config {
     Write-SockseekConf
 
     if ($Mode -notin 'vragen', 'automatisch', 'uit') {
-        return "versie-kiezen = $Mode snap ik niet; kies vragen, automatisch of uit."
+        return (L "versie-kiezen = $Mode snap ik niet; kies vragen, automatisch of uit." "versie-kiezen = $Mode is not understood; choose vragen, automatisch or uit.")
     }
     if (-not $cfg['soulseek-gebruiker'] -or -not $cfg['soulseek-wachtwoord']) {
-        return 'Vul eerst een Soulseek-naam en -wachtwoord in.'
+        return (L 'Vul eerst een Soulseek-naam en -wachtwoord in.' 'Fill in a Soulseek name and password first.')
     }
     return $null
 }

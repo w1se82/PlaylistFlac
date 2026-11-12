@@ -33,7 +33,7 @@ function Run-Console {
 
         Say "== $name  ($($tracks.Count) nummers)" Cyan
         if ($info.Spotify -and -not $info.Full -and $tracks.Count -ge 100 -and -not ($Mode -eq 'uit' -and $HasSpotifyApp)) {
-            Say '   Let op: zonder Spotify-koppeling ziet de tool maar 100 nummers. Zie README.md.' Yellow
+            Say '   Let op: zonder Spotify-koppeling ziet de tool maar 100 nummers. Zie README.nl.md.' Yellow
             if ($info.Note) { Say "   $($info.Note)" Yellow }
         }
 

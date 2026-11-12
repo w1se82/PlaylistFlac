@@ -14,7 +14,7 @@
 <div class="app" id="app" hidden>
   <nav class="rail" aria-label="Playlists">
     <div class="brand-row">
-      <div class="brand"><span class="eq" id="logo-eq" aria-hidden="true"><i></i><i></i><i></i><i></i><i></i></span>PlaylistFlac</div>
+      <div class="brand" data-no-t><span class="eq" id="logo-eq" aria-hidden="true"><i></i><i></i><i></i><i></i><i></i></span>PlaylistFlac</div>
       <button class="gear" id="settings" aria-label="Instellingen wijzigen" title="Instellingen wijzigen">
         <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M19.14 12.94c.04-.3.06-.61.06-.94 0-.32-.02-.64-.07-.94l2.03-1.58a.49.49 0 0 0 .12-.61l-1.92-3.32a.49.49 0 0 0-.59-.22l-2.39.96c-.5-.38-1.03-.7-1.62-.94l-.36-2.54a.48.48 0 0 0-.48-.41h-3.84c-.24 0-.43.17-.47.41l-.36 2.54c-.59.24-1.13.57-1.62.94l-2.39-.96a.48.48 0 0 0-.59.22L2.74 8.87c-.12.21-.08.47.12.61l2.03 1.58c-.05.3-.09.63-.09.94s.02.64.07.94l-2.03 1.58a.49.49 0 0 0-.12.61l1.92 3.32c.12.22.37.29.59.22l2.39-.96c.5.38 1.03.7 1.62.94l.36 2.54c.05.24.24.41.48.41h3.84c.24 0 .44-.17.47-.41l.36-2.54c.59-.24 1.13-.56 1.62-.94l2.39.96c.22.08.47 0 .59-.22l1.92-3.32c.12-.22.07-.47-.12-.61l-2.01-1.58zM12 15.6c-1.98 0-3.6-1.62-3.6-3.6s1.62-3.6 3.6-3.6 3.6 1.62 3.6 3.6-1.62 3.6-3.6 3.6z"/></svg>
       </button>
@@ -29,7 +29,7 @@
         </button>
       </div>
       <div class="who" id="who"></div>
-      <div class="legal"><span id="ver">PlaylistFlac</span><br>Copyright (c) 2026 WiWi Audio</div>
+      <div class="legal" data-no-t><span id="ver">PlaylistFlac</span><br>Copyright (c) 2026 WiWi Audio</div>
       <button type="button" class="upd" id="upd">Controleren op updates</button>
     </div>
   </nav>
@@ -70,6 +70,14 @@
       <input type="text" id="f-pref" spellcheck="false">
       <div class="help">Belangrijkste eerst, bijvoorbeeld: extended, original, club</div>
     </div>
+    <div class="field">
+      <label for="f-taal">Taal</label>
+      <select id="f-taal">
+        <option value="auto">Automatisch (zoals je computer)</option>
+        <option value="nl" data-no-t>Nederlands</option>
+        <option value="en" data-no-t>English</option>
+      </select>
+    </div>
     <section class="sp" id="sp">
       <h3 class="sub">Spotify koppelen <span class="opt">optioneel</span></h3>
       <p class="hint">Zonder koppeling ziet PlaylistFlac de eerste 100 nummers van een playlist. Met koppeling de hele playlist. Daarvoor is een eigen Spotify-app nodig, en Spotify eist dat het account van die app Premium heeft.</p>
@@ -108,6 +116,10 @@
 <dialog id="dlg-onboard" aria-labelledby="ob-title">
   <form id="form-onboard">
     <div class="steps" aria-hidden="true"><i></i><i></i><i></i><i></i></div>
+    <div class="ob-lang" id="ob-lang" data-no-t>
+      <button type="button" class="link" data-lang="nl">Nederlands</button>
+      <button type="button" class="link" data-lang="en">English</button>
+    </div>
     <p class="step-count" id="ob-count"></p>
 
     <div class="step" data-step="1">
@@ -257,6 +269,8 @@
   </form>
 </dialog>
 
+<script src="ui/i18n.js"></script>
+<script src="ui/lang-en.js"></script>
 <script src="ui/app.js"></script>
 <script src="ui/rondleiding.js"></script>
 </body>
