@@ -7,6 +7,7 @@ window.PF_EN = {
   // ---------- zijbalk ----------
   "Playlists": "Playlists",
   "Instellingen wijzigen": "Change settings",
+  "Taal kiezen": "Choose language",
   "Playlist toevoegen": "Add playlist",
   "Afsluiten": "Quit",
   "Controleren op updates": "Check for updates",

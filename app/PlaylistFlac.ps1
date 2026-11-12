@@ -81,7 +81,7 @@ $UiFile    = Join-Path $Root 'index.html'
 $LogFile   = Join-Path $StatusDir 'laatste-run.log'
 $Utf8      = New-Object System.Text.UTF8Encoding($false)
 $Ports     = 47821..47830
-$Version   = '1.5.0-beta'     # ook in README.md en README.nl.md; de interface leest hem uit /api/state
+$Version   = '1.5.1-beta'     # ook in README.md en README.nl.md; de interface leest hem uit /api/state
 $UpdateRepo = 'w1se82/PlaylistFlac'     # hier haalt de updateknop nieuwe versies vandaan
 # analyse: het script staat in app\analyse, Python met PyTorch per computer in data\analyse
 $AnaScript = Join-Path (Join-Path $AppDir 'analyse') 'analyse.py'

@@ -140,6 +140,7 @@ async function boot() {
   // de taal die de server kiest (instelling, of die van je browser); dan pas de vaste teksten vertalen
   setLang(S.app.lang);
   translateDom();
+  renderLangPick();
   $("#app").hidden = false;
   renderRail();
   checkUpdate(false);
@@ -812,6 +813,44 @@ document.querySelectorAll(".ob-lang [data-lang]").forEach((b) => {
   b.onclick = async () => {
     if (b.dataset.lang === LANG) return;
     try { await api("/api/settings", { taal: b.dataset.lang }); location.reload(); } catch (err) { $("#ob-err").textContent = err.message; }
+  };
+});
+
+// taalkeuze met vlaggetje naast het tandwiel
+function renderLangPick() {
+  $("#lang-flag").className = "flag flag-" + LANG;
+  document.querySelectorAll("#lang-menu [data-lang]").forEach((b) => b.setAttribute("aria-checked", b.dataset.lang === LANG));
+}
+function closeLangMenu(focusBtn) {
+  if ($("#lang-menu").hidden) return;
+  $("#lang-menu").hidden = true;
+  $("#lang-btn").setAttribute("aria-expanded", "false");
+  if (focusBtn) $("#lang-btn").focus();
+}
+$("#lang-btn").onclick = (e) => {
+  e.stopPropagation();
+  if (!$("#lang-menu").hidden) { closeLangMenu(); return; }
+  renderLangPick();
+  $("#lang-menu").hidden = false;
+  $("#lang-btn").setAttribute("aria-expanded", "true");
+  $(`#lang-menu [data-lang="${LANG}"]`).focus();
+};
+$("#lang-menu").addEventListener("keydown", (e) => {
+  const items = [...document.querySelectorAll("#lang-menu [data-lang]")];
+  const i = items.indexOf(document.activeElement);
+  if (e.key === "Escape") { e.preventDefault(); e.stopPropagation(); closeLangMenu(true); }
+  else if (e.key === "ArrowDown" || e.key === "ArrowUp") {
+    e.preventDefault();
+    items[(i + (e.key === "ArrowDown" ? 1 : items.length - 1)) % items.length].focus();
+  } else if (e.key === "Tab") closeLangMenu();
+});
+document.addEventListener("click", (e) => { if (!e.target.closest(".lang-pick")) closeLangMenu(); });
+document.querySelectorAll("#lang-menu [data-lang]").forEach((b) => {
+  b.onclick = async () => {
+    closeLangMenu(true);
+    if (b.dataset.lang === LANG) return;
+    try { await api("/api/settings", { taal: b.dataset.lang }); location.reload(); }
+    catch (err) { alert(err.message); }
   };
 });
 $("#ob-back").onclick = () => showStep(Math.max(1, obStep - 1));
