@@ -38,6 +38,7 @@ function Run-Task($taskFile) {
         # analyse heeft geen Soulseek nodig
         if ($task.type -eq 'installeren') { Run-AnalyseInstall; return }
         if ($task.type -eq 'analyseren') { Run-Analyse $task; return }
+        if ($task.type -eq 'wav') { Run-RekordboxWav; return }
         $err = Load-Config
         if ($err) { throw $err }
         if (-not (Test-Path $Exe)) {

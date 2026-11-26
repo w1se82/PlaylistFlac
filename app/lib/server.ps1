@@ -33,10 +33,10 @@ function Add-ToQueue($task) {
     [void](Load-Config)
     # meldingen van de taak in de taal van wie hem startte
     $task.lang = $script:Lang
-    if ($task.type -eq 'installeren') {
+    if ($task.type -in 'installeren', 'wav') {
         # hoort bij geen playlist
         $script:QueueId++
-        $task.id = $script:QueueId; $task.src = ''; $task.name = 'Analyse'; $task.count = 1
+        $task.id = $script:QueueId; $task.src = ''; $task.name = $(if ($task.type -eq 'wav') { 'rekordbox' } else { 'Analyse' }); $task.count = 1
         [void]$script:Queue.Add($task)
         Pump-Queue
         return
@@ -59,7 +59,7 @@ function Pump-Queue {
         $next = $script:Queue[0]
         $script:Queue.RemoveAt(0)
         [void](Load-Config)
-        if ($next.type -ne 'installeren') {
+        if ($next.type -notin 'installeren', 'wav') {
             $idx = -1
             for ($i = 0; $i -lt $cfg['playlists'].Count; $i++) { if ($cfg['playlists'][$i].Source -eq $next.src) { $idx = $i; break } }
             if ($idx -lt 0) { continue }          # playlist intussen verwijderd
@@ -367,6 +367,11 @@ function Handle-Request($ctx, $port) {
             Send-Json $ctx (Update-Rondleiding (Read-Body $ctx))
         }
         'POST /api/export/rekordbox' { Send-Json $ctx (Export-Rekordbox) }
+        'POST /api/export/rekordbox-wav' {
+            # duurt minuten (omzetten), dus via de wachtrij
+            Add-ToQueue @{ type = 'wav' }
+            Send-Json $ctx @{ ok = $true; running = (Task-Running) }
+        }
         'POST /api/analyse/install' {
             Add-ToQueue @{ type = 'installeren' }
             Send-Json $ctx @{ ok = $true; running = (Task-Running) }
@@ -378,7 +383,7 @@ function Handle-Request($ctx, $port) {
             $formaten = @($b.formaten | Where-Object { $AnaFormaten -contains $_ })
             if (-not $doen.Count -or -not $formaten.Count) { throw (L 'Kies wat je wilt analyseren en voor welke software.' 'Choose what to analyse and for which software.') }
             foreach ($i in @($b.indexes)) {
-                Add-ToQueue @{ type = 'analyseren'; index = [int]$i; doen = $doen; formaten = $formaten; opnieuw = [bool]$b.opnieuw; hele = [bool]$b.hele }
+                Add-ToQueue @{ type = 'analyseren'; index = [int]$i; doen = $doen; formaten = $formaten; opnieuw = [bool]$b.opnieuw; hele = [bool]$b.hele; wav = [bool]$b.wav }
             }
             Send-Json $ctx @{ ok = $true; running = (Task-Running) }
         }
@@ -404,6 +409,8 @@ function Handle-Request($ctx, $port) {
             if ($b.what -eq 'export') {
                 New-Item -ItemType Directory -Force $ExportDir | Out-Null
                 Open-Folder $ExportDir
+            } elseif ($b.what -eq 'wav') {
+                if (Test-Path -LiteralPath $WavXml) { Show-File $WavXml }
             } else {
                 $p = Join-Path $DataDir 'rekordbox.xml'
                 if (Test-Path -LiteralPath $p) { Show-File $p }

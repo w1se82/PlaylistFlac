@@ -2,7 +2,7 @@
 
 **English** | [Nederlands](README.nl.md)
 
-Version 1.5.1-beta
+Version 1.6.0-beta
 
 Your Spotify playlists as folders of FLAC files (or mp3 320), downloaded
 through Soulseek.
@@ -18,6 +18,13 @@ they're waiting for you next time.
 The interface is in English and Dutch. By default it follows your browser's
 language; you can change it with the flag at the top left, next to the gear
 icon.
+
+## New in 1.6.0-beta
+
+- **WAV for older CDJs**: a checkbox in *Analyse & export* converts the FLACs to
+  WAV (16-bit/44.1 kHz) in `WAV (CDJ)` in your music folder, with a
+  rekordbox.xml that points to those WAVs. Grid and cues stay the same. See
+  [WAV for older CDJs](#wav-for-older-cdjs).
 
 ## New in 1.5.1-beta
 
@@ -420,6 +427,30 @@ Good to know:
   differently, so the grid can shift a fraction. Check a few mp3s. FLAC and
   WAV don't have this.
 - It works from the command line too: `app\Start.cmd -Rekordbox`.
+
+## WAV for older CDJs
+
+Older CDJs (before the CDJ-2000NXS2, such as the CDJ-2000, 2000NXS, 900 and
+850) don't play FLAC. Then tick **WAV for older CDJs** in *Analyse & export*.
+It applies to rekordbox, both for the analysis and for *Traktor collection →
+rekordbox*.
+
+- Every FLAC becomes a WAV in `WAV (CDJ)\<playlist>` in your music folder. MP3s
+  and other files stay as they are.
+- The WAVs are 16-bit/44.1 kHz with a plain PCM header, which plays on every
+  model. A FLAC that is already 16-bit/44.1 kHz goes in bit-identical. A 24-bit
+  or 48/96 kHz file is converted properly (with dither).
+- A second xml points to the WAVs: `data\rekordbox (WAV).xml`, or
+  `<playlist> (rekordbox WAV).xml` in `data\export` for the analysis. Choose that
+  one at *rekordbox xml* in rekordbox.
+- Grid and cues stay on the same millisecond. Your FLACs are only read.
+- With *Traktor collection → rekordbox* only the PlaylistFlac playlists are
+  converted; your Traktor playlists keep pointing at the original files.
+- WAV is bigger than FLAC: expect about one and a half times the space.
+- The conversion uses Python (soundfile and soxr). If the analysis isn't
+  installed, PlaylistFlac installs just those packages once (about 40 MB) in
+  `data\analyse`.
+- Whatever is already converted is skipped next time.
 
 ## Playlists with more than 100 tracks
 

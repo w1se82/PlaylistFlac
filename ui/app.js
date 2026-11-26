@@ -415,6 +415,11 @@ function renderTask() {
     if (t.current) now = tr("Nu: {x}", { x: t.current });
   } else if (t.type === "installeren") {
     title = tr("Analyse installeren: stap {i} van {n}", { i: Math.min(total, done + 1), n: total });
+  } else if (t.phase === "wav") {
+    title = tr("WAV maken: {done} van {total} klaar", { done, total });
+    if (t.current) now = tr("Nu: {x}", { x: t.current });
+  } else if (t.type === "wav") {
+    title = tr("rekordbox-export voorbereiden");
   } else if (t.type === "analyseren") {
     title = total ? tr("Analyseren: {done} van {total} klaar", { done, total }) : tr("Analyse voorbereiden");
     if (t.current) now = tr("Nu: {x}", { x: t.current });
@@ -422,12 +427,12 @@ function renderTask() {
     title = t.phase === "downloaden" ? tr("Downloaden: {done} van {total} binnen", { done, total }) : tr("Verbinden met Soulseek");
     if (t.round > 1) title += tr(", poging {n}", { n: t.round });
   }
-  const doneTitle = { zoeken: "Zoeken klaar", downloaden: "Downloaden klaar", installeren: "Analyse geïnstalleerd", analyseren: "Analyse klaar" };
+  const doneTitle = { zoeken: "Zoeken klaar", downloaden: "Downloaden klaar", installeren: "Analyse geïnstalleerd", analyseren: "Analyse klaar", wav: "WAV voor rekordbox klaar" };
   if (!running) title = tr(t.state === "klaar" ? (doneTitle[t.type] || "Klaar")
                      : t.state === "gestopt" ? "Gestopt" : "Er ging iets mis");
-  if (S.view && t.index !== S.view.index && t.name && t.type !== "installeren") title += ` (${t.name})`;
+  if (S.view && t.index !== S.view.index && t.name && t.type !== "installeren" && t.type !== "wav") title += ` (${t.name})`;
   const pct = total ? Math.round((done / total) * 100) : 0;
-  const busyBar = running && !(t.phase === "zoeken" || t.phase === "downloaden" || (t.phase === "analyseren" && total) || t.type === "installeren");
+  const busyBar = running && !(t.phase === "zoeken" || t.phase === "downloaden" || (t.phase === "analyseren" && total) || (t.phase === "wav" && total) || t.type === "installeren");
   const file = running && t.type === "downloaden" && t.file && t.file.title
     ? `<div class="file"><span>${esc(t.file.title)}</span><span class="num">${esc(t.file.status || "")}</span>
         <div class="meter"><i style="width:${Math.min(100, t.file.pct || 0)}%"></i></div></div>` : "";
@@ -443,7 +448,7 @@ function renderTask() {
   }).join("\n");
   const foot = running
     ? `<span></span><span class="actions">${queue.length ? `<button class="btn quiet" data-act="cancel-all">${tr("Alles stoppen")}</button>` : ""}<button class="btn" data-act="cancel">${tr("Stoppen")}</button></span>`
-    : `<span></span><span class="actions">${t.type === "analyseren" && t.state === "klaar" ? `<button class="btn" data-act="export-dir">${tr("Exportmap openen")}</button>` : ""}<button class="btn quiet" data-act="dismiss">${tr("Sluiten")}</button></span>`;
+    : `<span></span><span class="actions">${t.type === "analyseren" && t.state === "klaar" ? `<button class="btn" data-act="export-dir">${tr("Exportmap openen")}</button>` : ""}${t.type === "wav" && t.state === "klaar" ? `<button class="btn" data-act="wav-xml">${tr("XML tonen")}</button>` : ""}<button class="btn quiet" data-act="dismiss">${tr("Sluiten")}</button></span>`;
   el.innerHTML = `<div class="task ${running ? "live" : t.state === "klaar" ? "done" : "err"}" role="status">
     <div class="task-top">${running ? EQ : ""}<h2>${esc(title)}</h2><span class="clock" id="clock"></span></div>
     ${running ? `<p class="now">${esc(now)}</p><div class="meter ${busyBar ? "busy" : ""}"><i style="${busyBar ? "" : `width:${pct}%`}"></i></div>${file}`
@@ -461,7 +466,7 @@ function renderTask() {
 function queueBlock(queue, running) {
   if (!queue.length) return "";
   const what = (q) => q.type === "downloaden" ? plural(q.count, "bestand downloaden", "bestanden downloaden")
-    : q.type === "analyseren" ? t("analyseren en exporteren") : q.type === "installeren" ? t("installeren")
+    : q.type === "analyseren" ? t("analyseren en exporteren") : q.type === "installeren" ? t("installeren") : q.type === "wav" ? t("WAV voor rekordbox maken")
     : plural(q.count, "nummer zoeken", "nummers zoeken");
   return `<div class="queue"><p class="log-title">${t(running ? "Hierna in de wachtrij" : "In de wachtrij")}</p><ol>
     ${queue.map((q, i) => `<li><span><span class="n">${i + 1}</span><b>${esc(tx(q.name))}</b>: ${what(q)}</span>
@@ -584,6 +589,8 @@ $("#main").addEventListener("click", async (e) => {
       await openPlaylist(S.current);
     } else if (act === "export-dir") {
       await api("/api/reveal", { what: "export" });
+    } else if (act === "wav-xml") {
+      await api("/api/reveal", { what: "wav" });
     } else if (act === "dismiss") {
       S.dismissed = S.app.task && S.app.task.started;
       renderTask();
@@ -922,9 +929,9 @@ $("#form-add").addEventListener("submit", async (e) => {
 /* ---------- export voor rekordbox ---------- */
 
 // een functie: de taal is pas bekend als de server geantwoord heeft
-const RB_STEPS = () => `<ol class="how-to">
+const RB_STEPS = (name = "rekordbox.xml") => `<ol class="how-to">
   <li>${t("Open rekordbox, ga naar <b>Voorkeuren → Geavanceerd → Database</b> (Preferences → Advanced → Database).")}</li>
-  <li>${t("Kies bij <b>rekordbox xml</b> het bestand <code>{file}</code> in de map van PlaylistFlac.", { file: `data${SEP}rekordbox.xml` })}</li>
+  <li>${t("Kies bij <b>rekordbox xml</b> het bestand <code>{file}</code> in de map van PlaylistFlac.", { file: `data${SEP}${name}` })}</li>
   <li>${t("Zet in de voorkeuren bij <b>Weergave → Lay-out</b> (View → Layout) het vinkje bij <b>rekordbox xml</b> aan. Links in de boom verschijnt dan \"rekordbox xml\".")}</li>
   <li>${t("Klik daar met rechts op een playlist of map en kies <b>Importeren</b> (Import Playlist).")}</li>
 </ol>
@@ -943,7 +950,7 @@ function timSync(p) {
 /* ---------- analyseren & exporteren ---------- */
 
 // gekozen vinkjes onthouden (alleen in deze browser; mag ontbreken)
-const ANA_KEYS = ["grid", "cues", "key", "keyest", "energy", "traktor", "rb"];
+const ANA_KEYS = ["grid", "cues", "key", "keyest", "energy", "traktor", "rb", "wav"];
 function anaLoad() {
   try {
     const v = JSON.parse(localStorage.getItem("pf-analyse") || "null");
@@ -996,7 +1003,7 @@ anaLoad();
 // cues kunnen alleen met een beatgrid
 $("#ana-cues").onchange = () => { if ($("#ana-cues").checked) $("#ana-grid").checked = true; anaSave(); };
 $("#ana-grid").onchange = () => { if (!$("#ana-grid").checked) $("#ana-cues").checked = false; anaSave(); };
-["key", "keyest", "energy", "traktor", "rb"].forEach((k) => { $(`#ana-${k}`).onchange = anaSave; });
+["key", "keyest", "energy", "traktor", "rb", "wav"].forEach((k) => { $(`#ana-${k}`).onchange = anaSave; });
 
 $("#rb-go").onclick = async () => {
   const a = S.app.setup.analyse || {};
@@ -1017,7 +1024,8 @@ $("#rb-go").onclick = async () => {
     if (!formaten.length) throw new Error(t("Kies voor welke software."));
     anaSave();
     $("#rb-go").disabled = true;
-    await enqueue("/api/analyse", { indexes, doen, formaten, opnieuw: $("#ana-opnieuw").checked, hele: $("#ana-hele").checked });
+    await enqueue("/api/analyse", { indexes, doen, formaten, opnieuw: $("#ana-opnieuw").checked, hele: $("#ana-hele").checked,
+      wav: $("#ana-wav").checked && formaten.includes("rekordbox") });
     $("#ana-opnieuw").checked = false; $("#ana-hele").checked = false;   // per keer, standaard weer uit
   } catch (err) {
     $("#ana-err").textContent = err.message;
@@ -1028,6 +1036,20 @@ $("#rb-go").onclick = async () => {
 
 // zonder eigen analyse: wat Traktor al weet meenemen naar rekordbox (zoals in 1.0)
 $("#rb-traktor").onclick = async () => {
+  if ($("#ana-wav").checked) {
+    // omzetten naar WAV duurt minuten: via de wachtrij, voortgang bij "Wat er gebeurt"
+    $("#rb-traktor").disabled = true;
+    try {
+      await enqueue("/api/export/rekordbox-wav", {});
+      $("#rb-body").innerHTML = `<p class="hint">${t("In de wachtrij gezet. De voortgang staat bij \"Wat er gebeurt\". Het bestand wordt <code>{file}</code>.", { file: `data${SEP}rekordbox (WAV).xml` })}</p>
+        <h3 class="sub">${t("Zo haal je het binnen in rekordbox")}</h3>${RB_STEPS("rekordbox (WAV).xml")}`;
+    } catch (err) {
+      $("#rb-body").innerHTML = `<p class="dlg-err">${esc(err.message)}</p>`;
+    } finally {
+      $("#rb-traktor").disabled = false;
+    }
+    return;
+  }
   $("#ana-setup").hidden = true; $("#ana-form").hidden = true;
   $("#rb-traktor").disabled = true;
   $("#rb-body").innerHTML = `<div class="task live"><div class="task-top">${EQ}<h2>${t("Traktor-collectie omzetten...")}</h2></div><p class="now">${t("Duurt meestal zo'n tien seconden.")}</p></div>`;

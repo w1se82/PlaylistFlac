@@ -81,7 +81,7 @@ $UiFile    = Join-Path $Root 'index.html'
 $LogFile   = Join-Path $StatusDir 'laatste-run.log'
 $Utf8      = New-Object System.Text.UTF8Encoding($false)
 $Ports     = 47821..47830
-$Version   = '1.5.1-beta'     # ook in README.md en README.nl.md; de interface leest hem uit /api/state
+$Version   = '1.6.0-beta'     # ook in README.md en README.nl.md; de interface leest hem uit /api/state
 $UpdateRepo = 'w1se82/PlaylistFlac'     # hier haalt de updateknop nieuwe versies vandaan
 # analyse: het script staat in app\analyse, Python met PyTorch per computer in data\analyse
 $AnaScript = Join-Path (Join-Path $AppDir 'analyse') 'analyse.py'
@@ -97,7 +97,7 @@ function Say($text, $color = 'Gray') { Write-Host $text -ForegroundColor $color 
 # Volgorde maakt uit: later ingeladen onderdelen gebruiken variabelen van eerdere.
 # Dot-source in de scriptscope, zodat $script:-variabelen gedeeld blijven.
 $LibParts = 'taal', 'platform', 'release', 'instellingen', 'soulseek', 'spotify', 'versies', 'playlist',
-            'console', 'taak', 'rekordbox', 'analyse', 'update', 'rondleiding', 'server', 'koppeling'
+            'console', 'taak', 'rekordbox', 'analyse', 'wav', 'update', 'rondleiding', 'server', 'koppeling'
 foreach ($part in $LibParts) { . (Join-Path $LibDir "$part.ps1") }
 # taal van meldingen tot de interface iets anders zegt (zie app\lib\taal.ps1)
 $script:Lang = if ($Taal -in 'nl', 'en') { $Taal } else { Get-OsLang }
@@ -120,7 +120,7 @@ if ($Inpakken) {
     New-Item -ItemType Directory -Force (Join-Path $pkg 'app\lib') | Out-Null
     foreach ($part in $LibParts) { Copy-Item (Join-Path $LibDir "$part.ps1") (Join-Path $pkg 'app\lib') }
     New-Item -ItemType Directory -Force (Join-Path $pkg 'app\analyse') | Out-Null
-    Copy-Item (Join-Path $AppDir 'analyse\analyse.py'), (Join-Path $AppDir 'analyse\model.json') (Join-Path $pkg 'app\analyse')
+    Copy-Item (Join-Path $AppDir 'analyse\analyse.py'), (Join-Path $AppDir 'analyse\naar_wav.py'), (Join-Path $AppDir 'analyse\model.json') (Join-Path $pkg 'app\analyse')
     Write-ReleaseZip $stage $zip
     Remove-Item $stage -Recurse -Force
     Say "Klaar: $zip" Green

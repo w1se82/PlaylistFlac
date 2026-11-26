@@ -190,7 +190,14 @@ function Run-Analyse($task) {
     }
     $r = Invoke-Logged $AnaPy $argList $onLine
     if ($r.Code) { throw ((L 'De analyse stopte met een fout' 'The analysis stopped with an error') + ": $(Last-Lines $r.Err)") }
-    $msg = if ($st.bewaard) { L "$($st.ok) tracks geanalyseerd, $($st.bewaard) overgeslagen omdat ze al klaar waren." "$($st.ok) tracks analysed, $($st.bewaard) skipped because they were already done." } else { L "$($st.ok) van $($files.Count) tracks geanalyseerd." "$($st.ok) of $($files.Count) tracks analysed." }
+    # WAV voor oudere CDJ's: een tweede rekordbox.xml die naar WAV-kopieen wijst
+    $wavMsg = ''
+    if ($task.wav -and $out.rekordbox -and (Test-Path -LiteralPath $out.rekordbox)) {
+        Install-WavPython
+        $out.wav = "$base (rekordbox WAV).xml"
+        $wavMsg = ' ' + (Format-WavResult (Convert-RekordboxWav $out.rekordbox $out.wav '') $out.wav)
+    }
+    $msg =if ($st.bewaard) { L "$($st.ok) tracks geanalyseerd, $($st.bewaard) overgeslagen omdat ze al klaar waren." "$($st.ok) tracks analysed, $($st.bewaard) skipped because they were already done." } else { L "$($st.ok) van $($files.Count) tracks geanalyseerd." "$($st.ok) of $($files.Count) tracks analysed." }
     if ($st.fout) { $msg += L " Bij $($st.fout) mislukt." " Failed for $($st.fout)." }
     if ($st.nalopen) { $msg += L " Bij $($st.nalopen) staat iets om na te lopen: zie Analyse bij de playlist." " $($st.nalopen) have something to check: see Analysis on the playlist." }
     $msg += (L ' Klaar in data\export: ' ' Ready in data\export: ') + ((@($out.Values) | ForEach-Object { [IO.Path]::GetFileName($_) }) -join (L ' en ' ' and ')) + '.'
@@ -209,7 +216,7 @@ function Run-Analyse($task) {
             }
         } catch { Add-TaskLog ((L 'Kon de .nml niet op het bureaublad zetten' 'Could not put the .nml on the desktop') + ": $($_.Exception.Message)") }
     }
-    Update-Task @{ state = 'klaar'; message = $msg; done = $files.Count; current = ''; files = @($out.Values) } -Force
+    Update-Task @{ state = 'klaar'; message = ($msg + $wavMsg); done = $files.Count; total = $files.Count; current = ''; files = @($out.Values) } -Force
 }
 
 # Traktor opent zijn importvenster op het bureaublad; daar dus een kopie. Met een
