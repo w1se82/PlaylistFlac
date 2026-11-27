@@ -1,9 +1,10 @@
-"""PlaylistFlac - FLAC naar WAV voor oudere CDJ's, en een rekordbox.xml die naar die WAV's wijst.
+"""PlaylistFlac - FLAC naar AIFF voor oudere CDJ's, en een rekordbox.xml die naar die AIFF's wijst.
 
-Oudere Pioneer-spelers (van voor de CDJ-2000NXS2) spelen geen FLAC, wel WAV van
-16 of 24 bit op 44,1 of 48 kHz. Sommige struikelen over WAVE_FORMAT_EXTENSIBLE, de
-header die veel programma's bij 24 bit schrijven. Daarom wordt alles 16-bit/44,1 kHz
-met een gewone PCM-header: dat speelt op elk model.
+Oudere Pioneer-spelers (van voor de CDJ-2000NXS2) spelen geen FLAC, wel AIFF en WAV.
+AIFF en WAV klinken precies hetzelfde (ongecomprimeerd), maar alleen bij AIFF leest
+rekordbox de cover en de tags uit het bestand; bij WAV laat rekordbox geen cover zien.
+Daarom AIFF, 16-bit/44,1 kHz (speelt op elk model), met een ID3-blok (v2.4) met de
+tags en de cover uit de FLAC.
 
 - 16-bit/44,1 kHz FLAC: de samples gaan ongewijzigd over (bit voor bit gelijk).
 - Andere FLAC (24 bit, 48 of 96 kHz): soxr (VHQ) naar 44,1 kHz, dan naar 16 bit met
@@ -12,8 +13,8 @@ met een gewone PCM-header: dat speelt op elk model.
 Leest een rekordbox.xml en de muziekbestanden, schrijft alleen in --map en naar --uit.
 Elke regel op stdout is JSON, voor de voortgang in PlaylistFlac.
 
-    naar_wav.py --check
-    naar_wav.py --xml in.xml --uit uit.xml --map "<muziekmap>/WAV (CDJ)" [--alleen PlaylistFlac]
+    naar_aiff.py --check
+    naar_aiff.py --xml in.xml --uit uit.xml --map "<muziekmap>/AIFF (CDJ)" [--alleen PlaylistFlac]
 """
 import argparse, json, os, re, sys
 import xml.etree.ElementTree as ET
@@ -21,7 +22,10 @@ from urllib.parse import quote, unquote
 
 sys.stdout.reconfigure(encoding='utf-8')
 OUT_SR = 44100
-TAGS = ('title', 'artist', 'album', 'date', 'genre', 'comment', 'tracknumber')
+# Vorbis-commentaar in de FLAC -> ID3-frame in de AIFF
+ID3_TAGS = (('title', 'TIT2'), ('artist', 'TPE1'), ('album', 'TALB'), ('albumartist', 'TPE2'),
+            ('genre', 'TCON'), ('date', 'TDRC'), ('tracknumber', 'TRCK'), ('remixer', 'TPE4'),
+            ('label', 'TPUB'), ('organization', 'TPUB'), ('isrc', 'TSRC'))
 
 
 def say(**m):
@@ -29,10 +33,11 @@ def say(**m):
 
 
 def check():
-    import numpy, soundfile as sf, soxr  # noqa: F401
-    if 'FLAC' not in sf.available_formats():
-        raise SystemExit('libsndfile zonder FLAC')
-    say(t='ok', msg=f'soundfile {sf.__version__} ({sf.__libsndfile_version__}), soxr {soxr.__version__}')
+    import numpy, soundfile as sf, soxr, mutagen  # noqa: F401
+    fm = sf.available_formats()
+    if 'FLAC' not in fm or 'AIFF' not in fm:
+        raise SystemExit('libsndfile zonder FLAC of AIFF')
+    say(t='ok', msg=f'soundfile {sf.__version__} ({sf.__libsndfile_version__}), soxr {soxr.__version__}, mutagen {mutagen.version_string}')
 
 
 # --- paden <-> rekordbox Location ---------------------------------------------
@@ -58,15 +63,40 @@ def safe_name(s):
 
 # --- omzetten -------------------------------------------------------------------
 
-def wav_format_tag(path):
+def is_plain_aiff(path):
+    """FORM....AIFF (geen AIFC) met 16-bit samples."""
     with open(path, 'rb') as f:
-        head = f.read(256)
-    i = head.find(b'fmt ')
-    return int.from_bytes(head[i + 8:i + 10], 'little') if i >= 0 else -1
+        head = f.read(4096)
+    if head[:4] != b'FORM' or head[8:12] != b'AIFF':
+        return False
+    i = head.find(b'COMM')
+    return i >= 0 and int.from_bytes(head[i + 14:i + 16], 'big') == 16
+
+
+def write_tags(src, dst):
+    """Tags en cover uit de FLAC als ID3 v2.4 in de AIFF. Geeft True als er een cover is."""
+    from mutagen.flac import FLAC
+    from mutagen.aiff import AIFF
+    from mutagen import id3
+    f = FLAC(src)
+    v = f.tags or {}
+    a = AIFF(dst)
+    if a.tags is None:
+        a.add_tags()
+    for key, frame in ID3_TAGS:
+        val = v.get(key)
+        if val and frame not in a.tags:
+            a.tags.add(getattr(id3, frame)(encoding=3, text=[x for x in val if x]))
+    pics = sorted(f.pictures, key=lambda p: p.type != 3)     # voorkant eerst
+    if pics:
+        p = pics[0]
+        a.tags.add(id3.APIC(encoding=3, mime=p.mime or 'image/jpeg', type=3, desc='Cover', data=p.data))
+    a.save(v2_version=4)
+    return bool(pics)
 
 
 def convert(src, dst):
-    """Geeft (status, uitleg). Schrijft eerst naar dst.part, pas na controle naar dst."""
+    """Geeft (status, uitleg, cover). Schrijft eerst naar dst.part, pas na controle naar dst."""
     import numpy as np, soundfile as sf, soxr
     tmp = dst + '.part'
     with sf.SoundFile(src) as fin:
@@ -74,14 +104,7 @@ def convert(src, dst):
         nch = min(ch, 2)
         exact = sr == OUT_SR and sub == 'PCM_16'
         os.makedirs(os.path.dirname(dst), exist_ok=True)
-        with sf.SoundFile(tmp, 'w', OUT_SR, nch, 'PCM_16', format='WAV') as fout:
-            for k in TAGS:
-                try:
-                    v = getattr(fin, k)
-                    if v:
-                        setattr(fout, k, v)
-                except Exception:
-                    pass
+        with sf.SoundFile(tmp, 'w', OUT_SR, nch, 'PCM_16', format='AIFF') as fout:
             if exact:
                 for block in fin.blocks(blocksize=1 << 16, dtype='int16', always_2d=True):
                     fout.write(block[:, :nch])
@@ -101,13 +124,18 @@ def convert(src, dst):
                     put(rs.resample_chunk(y) if rs else y)
                 if rs:
                     put(rs.resample_chunk(np.zeros((0, nch), np.float32), last=True))
-    tag = wav_format_tag(tmp)
-    if tag != 1:
+    try:
+        if not is_plain_aiff(tmp):
+            raise RuntimeError('AIFF-header klopt niet')
+        cover = write_tags(src, tmp)
+        if not is_plain_aiff(tmp):
+            raise RuntimeError('AIFF-header klopt niet na de tags')
+    except Exception:
         os.remove(tmp)
-        raise RuntimeError(f'WAV-header is geen gewone PCM (tag {tag})')
+        raise
     os.replace(tmp, dst)
     bits = {'PCM_16': 16, 'PCM_24': 24, 'PCM_32': 32, 'FLOAT': 32, 'PCM_S8': 8, 'PCM_U8': 8}.get(sub, 0)
-    return ('exact', '') if exact else ('omgezet', f'{sr} Hz/{bits}-bit')
+    return ('exact', '', cover) if exact else ('omgezet', f'{sr} Hz/{bits}-bit', cover)
 
 
 # --- rekordbox.xml ---------------------------------------------------------------
@@ -139,14 +167,14 @@ def run(a):
                 continue
             src = url_to_path(t.get('Location'))
             stem = os.path.splitext(os.path.basename(src))[0]
-            dst = os.path.join(folder, stem + '.wav')
+            dst = os.path.join(folder, stem + '.aiff')
             n = 2
             while used.get(dst.lower(), src) != src:          # andere track met dezelfde naam
-                dst = os.path.join(folder, f'{stem} ({n}).wav'); n += 1
+                dst = os.path.join(folder, f'{stem} ({n}).aiff'); n += 1
             used[dst.lower()] = src
             plan[tid] = (src, dst)
 
-    st = dict(n=len(plan), exact=0, omgezet=0, bestond=0, fout=0, ontbreekt=0, bytes=0)
+    st = dict(n=len(plan), exact=0, omgezet=0, bestond=0, fout=0, ontbreekt=0, cover=0, bytes=0)
     say(t='start', n=len(plan), map=out_root)
     for i, (tid, (src, dst)) in enumerate(plan.items(), 1):
         naam = os.path.basename(dst)
@@ -158,10 +186,13 @@ def run(a):
                 say(t='fout', i=i, naam=naam, msg='FLAC niet gevonden: ' + src)
                 continue
             if os.path.exists(dst) and os.path.getmtime(dst) >= os.path.getmtime(src):
-                status, uitleg = 'bestond', ''
+                from mutagen.aiff import AIFF
+                tags = AIFF(dst).tags
+                status, uitleg, cover = 'bestond', '', bool(tags and tags.getall('APIC'))
             else:
-                status, uitleg = convert(src, dst)
+                status, uitleg, cover = convert(src, dst)
             st[status] += 1
+            st['cover'] += cover
         except Exception as e:
             st['fout'] += 1
             say(t='fout', i=i, naam=naam, msg=str(e))
@@ -170,11 +201,11 @@ def run(a):
         size = os.path.getsize(dst)
         st['bytes'] += size
         t.set('Location', path_to_url(dst))
-        t.set('Kind', 'WAV File')
+        t.set('Kind', 'AIFF File')
         t.set('Size', str(size))
         t.set('SampleRate', str(OUT_SR))
         t.set('BitRate', '1411')
-        say(t='track', i=i, naam=naam, status=status, uitleg=uitleg)
+        say(t='track', i=i, naam=naam, status=status, uitleg=uitleg, cover=cover)
 
     ET.indent(tree, '  ')
     tmp = a.uit + '.part'

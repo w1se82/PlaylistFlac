@@ -416,7 +416,7 @@ function renderTask() {
   } else if (t.type === "installeren") {
     title = tr("Analyse installeren: stap {i} van {n}", { i: Math.min(total, done + 1), n: total });
   } else if (t.phase === "wav") {
-    title = tr("WAV maken: {done} van {total} klaar", { done, total });
+    title = tr("AIFF maken: {done} van {total} klaar", { done, total });
     if (t.current) now = tr("Nu: {x}", { x: t.current });
   } else if (t.type === "wav") {
     title = tr("rekordbox-export voorbereiden");
@@ -427,7 +427,7 @@ function renderTask() {
     title = t.phase === "downloaden" ? tr("Downloaden: {done} van {total} binnen", { done, total }) : tr("Verbinden met Soulseek");
     if (t.round > 1) title += tr(", poging {n}", { n: t.round });
   }
-  const doneTitle = { zoeken: "Zoeken klaar", downloaden: "Downloaden klaar", installeren: "Analyse geïnstalleerd", analyseren: "Analyse klaar", wav: "WAV voor rekordbox klaar" };
+  const doneTitle = { zoeken: "Zoeken klaar", downloaden: "Downloaden klaar", installeren: "Analyse geïnstalleerd", analyseren: "Analyse klaar", wav: "AIFF voor rekordbox klaar" };
   if (!running) title = tr(t.state === "klaar" ? (doneTitle[t.type] || "Klaar")
                      : t.state === "gestopt" ? "Gestopt" : "Er ging iets mis");
   if (S.view && t.index !== S.view.index && t.name && t.type !== "installeren" && t.type !== "wav") title += ` (${t.name})`;
@@ -466,7 +466,7 @@ function renderTask() {
 function queueBlock(queue, running) {
   if (!queue.length) return "";
   const what = (q) => q.type === "downloaden" ? plural(q.count, "bestand downloaden", "bestanden downloaden")
-    : q.type === "analyseren" ? t("analyseren en exporteren") : q.type === "installeren" ? t("installeren") : q.type === "wav" ? t("WAV voor rekordbox maken")
+    : q.type === "analyseren" ? t("analyseren en exporteren") : q.type === "installeren" ? t("installeren") : q.type === "wav" ? t("AIFF voor rekordbox maken")
     : plural(q.count, "nummer zoeken", "nummers zoeken");
   return `<div class="queue"><p class="log-title">${t(running ? "Hierna in de wachtrij" : "In de wachtrij")}</p><ol>
     ${queue.map((q, i) => `<li><span><span class="n">${i + 1}</span><b>${esc(tx(q.name))}</b>: ${what(q)}</span>
@@ -1037,12 +1037,12 @@ $("#rb-go").onclick = async () => {
 // zonder eigen analyse: wat Traktor al weet meenemen naar rekordbox (zoals in 1.0)
 $("#rb-traktor").onclick = async () => {
   if ($("#ana-wav").checked) {
-    // omzetten naar WAV duurt minuten: via de wachtrij, voortgang bij "Wat er gebeurt"
+    // omzetten naar AIFF duurt minuten: via de wachtrij, voortgang bij "Wat er gebeurt"
     $("#rb-traktor").disabled = true;
     try {
       await enqueue("/api/export/rekordbox-wav", {});
-      $("#rb-body").innerHTML = `<p class="hint">${t("In de wachtrij gezet. De voortgang staat bij \"Wat er gebeurt\". Het bestand wordt <code>{file}</code>.", { file: `data${SEP}rekordbox (WAV).xml` })}</p>
-        <h3 class="sub">${t("Zo haal je het binnen in rekordbox")}</h3>${RB_STEPS("rekordbox (WAV).xml")}`;
+      $("#rb-body").innerHTML = `<p class="hint">${t("In de wachtrij gezet. De voortgang staat bij \"Wat er gebeurt\". Het bestand wordt <code>{file}</code>.", { file: `data${SEP}rekordbox (AIFF).xml` })}</p>
+        <h3 class="sub">${t("Zo haal je het binnen in rekordbox")}</h3>${RB_STEPS("rekordbox (AIFF).xml")}`;
     } catch (err) {
       $("#rb-body").innerHTML = `<p class="dlg-err">${esc(err.message)}</p>`;
     } finally {

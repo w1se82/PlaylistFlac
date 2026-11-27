@@ -17,10 +17,10 @@ de volgende keer klaar.
 
 ## Nieuw in 1.6.0-beta
 
-- **WAV voor oudere CDJ's**: een vinkje in *Analyseren & exporteren* zet de
-  FLAC's om naar WAV (16-bit/44,1 kHz) in `WAV (CDJ)` in je muziekmap, met een
-  rekordbox.xml die naar die WAV's wijst. Grid en cues blijven gelijk. Zie
-  [WAV voor oudere CDJ's](#wav-voor-oudere-cdjs).
+- **AIFF voor oudere CDJ's**: een vinkje in *Analyseren & exporteren* zet de
+  FLAC's om naar AIFF (16-bit/44,1 kHz, met cover en tags) in `AIFF (CDJ)` in
+  je muziekmap, met een rekordbox.xml die naar die AIFF's wijst. Grid en cues
+  blijven gelijk. Zie [AIFF voor oudere CDJ's](#aiff-voor-oudere-cdjs).
 
 ## Nieuw in 1.5.1-beta
 
@@ -512,27 +512,30 @@ Goed om te weten:
   het klopt. Bij FLAC en WAV speelt dit niet.
 - Vanaf de opdrachtregel kan het ook: `app\Start.cmd -Rekordbox`.
 
-## WAV voor oudere CDJ's
+## AIFF voor oudere CDJ's
 
 Oudere CDJ's (van voor de CDJ-2000NXS2, zoals de CDJ-2000, 2000NXS, 900 en
-850) spelen geen FLAC. Zet dan in *Analyseren & exporteren* het vinkje **WAV
+850) spelen geen FLAC. Zet dan in *Analyseren & exporteren* het vinkje **AIFF
 voor oudere CDJ's** aan. Het geldt voor rekordbox, zowel bij de analyse als
 bij *Traktor-collectie → rekordbox*.
 
-- Elke FLAC wordt een WAV in `WAV (CDJ)\<playlist>` in je muziekmap. Mp3's en
-  andere bestanden blijven zoals ze zijn.
-- De WAV's zijn 16-bit/44,1 kHz met een gewone PCM-header. Dat speelt op elk
-  model. Een FLAC die al 16-bit/44,1 kHz is, gaat er bit voor bit gelijk in.
-  Een 24-bit of 48/96 kHz-bestand wordt netjes omgezet (met dither).
-- Er komt een tweede xml die naar de WAV's wijst: `data\rekordbox (WAV).xml`,
-  of `<playlist> (rekordbox WAV).xml` in `data\export` bij de analyse. Kies die
-  in rekordbox bij *rekordbox xml*.
+- Elke FLAC wordt een AIFF in `AIFF (CDJ)\<playlist>` in je muziekmap. Mp3's
+  en andere bestanden blijven zoals ze zijn.
+- AIFF klinkt precies als WAV (allebei ongecomprimeerd), maar alleen bij AIFF
+  leest rekordbox de cover en de tags uit het bestand. Cover, titel, artiest,
+  album en dergelijke worden uit de FLAC overgenomen.
+- De AIFF's zijn 16-bit/44,1 kHz. Dat speelt op elk model. Een FLAC die al
+  16-bit/44,1 kHz is, gaat er bit voor bit gelijk in. Een 24-bit of
+  48/96 kHz-bestand wordt netjes omgezet (met dither).
+- Er komt een tweede xml die naar de AIFF's wijst: `data\rekordbox (AIFF).xml`,
+  of `<playlist> (rekordbox AIFF).xml` in `data\export` bij de analyse. Kies
+  die in rekordbox bij *rekordbox xml*.
 - Grid en cues blijven op dezelfde milliseconde staan. Je FLAC's worden
   alleen gelezen.
 - Bij *Traktor-collectie → rekordbox* worden alleen de PlaylistFlac-playlists
   omgezet; je Traktor-playlists blijven verwijzen naar de originele bestanden.
-- WAV is groter dan FLAC: reken op ongeveer anderhalf keer zoveel ruimte.
-- Het omzetten gebruikt Python (soundfile en soxr). Heb je de analyse niet
+- AIFF is groter dan FLAC: reken op ongeveer anderhalf keer zoveel ruimte.
+- Het omzetten gebruikt Python (soundfile, soxr en mutagen). Heb je de analyse niet
   geïnstalleerd, dan installeert PlaylistFlac eenmalig alleen die pakketten
   (ongeveer 40 MB) in `data\analyse`.
 - Wat al omgezet is, slaat hij de volgende keer over.

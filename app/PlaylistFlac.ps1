@@ -120,7 +120,7 @@ if ($Inpakken) {
     New-Item -ItemType Directory -Force (Join-Path $pkg 'app\lib') | Out-Null
     foreach ($part in $LibParts) { Copy-Item (Join-Path $LibDir "$part.ps1") (Join-Path $pkg 'app\lib') }
     New-Item -ItemType Directory -Force (Join-Path $pkg 'app\analyse') | Out-Null
-    Copy-Item (Join-Path $AppDir 'analyse\analyse.py'), (Join-Path $AppDir 'analyse\naar_wav.py'), (Join-Path $AppDir 'analyse\model.json') (Join-Path $pkg 'app\analyse')
+    Copy-Item (Join-Path $AppDir 'analyse\analyse.py'), (Join-Path $AppDir 'analyse\naar_aiff.py'), (Join-Path $AppDir 'analyse\model.json') (Join-Path $pkg 'app\analyse')
     Write-ReleaseZip $stage $zip
     Remove-Item $stage -Recurse -Force
     Say "Klaar: $zip" Green

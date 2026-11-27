@@ -21,10 +21,10 @@ icon.
 
 ## New in 1.6.0-beta
 
-- **WAV for older CDJs**: a checkbox in *Analyse & export* converts the FLACs to
-  WAV (16-bit/44.1 kHz) in `WAV (CDJ)` in your music folder, with a
-  rekordbox.xml that points to those WAVs. Grid and cues stay the same. See
-  [WAV for older CDJs](#wav-for-older-cdjs).
+- **AIFF for older CDJs**: a checkbox in *Analyse & export* converts the FLACs
+  to AIFF (16-bit/44.1 kHz, with cover and tags) in `AIFF (CDJ)` in your music
+  folder, with a rekordbox.xml that points to those AIFFs. Grid and cues stay
+  the same. See [AIFF for older CDJs](#aiff-for-older-cdjs).
 
 ## New in 1.5.1-beta
 
@@ -428,26 +428,29 @@ Good to know:
   WAV don't have this.
 - It works from the command line too: `app\Start.cmd -Rekordbox`.
 
-## WAV for older CDJs
+## AIFF for older CDJs
 
 Older CDJs (before the CDJ-2000NXS2, such as the CDJ-2000, 2000NXS, 900 and
-850) don't play FLAC. Then tick **WAV for older CDJs** in *Analyse & export*.
+850) don't play FLAC. Then tick **AIFF for older CDJs** in *Analyse & export*.
 It applies to rekordbox, both for the analysis and for *Traktor collection →
 rekordbox*.
 
-- Every FLAC becomes a WAV in `WAV (CDJ)\<playlist>` in your music folder. MP3s
-  and other files stay as they are.
-- The WAVs are 16-bit/44.1 kHz with a plain PCM header, which plays on every
-  model. A FLAC that is already 16-bit/44.1 kHz goes in bit-identical. A 24-bit
-  or 48/96 kHz file is converted properly (with dither).
-- A second xml points to the WAVs: `data\rekordbox (WAV).xml`, or
-  `<playlist> (rekordbox WAV).xml` in `data\export` for the analysis. Choose that
-  one at *rekordbox xml* in rekordbox.
+- Every FLAC becomes an AIFF in `AIFF (CDJ)\<playlist>` in your music folder.
+  MP3s and other files stay as they are.
+- AIFF sounds exactly like WAV (both uncompressed), but only with AIFF does
+  rekordbox read the cover and tags from the file. The cover, title, artist,
+  album and so on are copied from the FLAC.
+- The AIFFs are 16-bit/44.1 kHz, which plays on every model. A FLAC that is
+  already 16-bit/44.1 kHz goes in bit-identical. A 24-bit or 48/96 kHz file is
+  converted properly (with dither).
+- A second xml points to the AIFFs: `data\rekordbox (AIFF).xml`, or
+  `<playlist> (rekordbox AIFF).xml` in `data\export` for the analysis. Choose
+  that one at *rekordbox xml* in rekordbox.
 - Grid and cues stay on the same millisecond. Your FLACs are only read.
 - With *Traktor collection → rekordbox* only the PlaylistFlac playlists are
   converted; your Traktor playlists keep pointing at the original files.
-- WAV is bigger than FLAC: expect about one and a half times the space.
-- The conversion uses Python (soundfile and soxr). If the analysis isn't
+- AIFF is bigger than FLAC: expect about one and a half times the space.
+- The conversion uses Python (soundfile, soxr and mutagen). If the analysis isn't
   installed, PlaylistFlac installs just those packages once (about 40 MB) in
   `data\analyse`.
 - Whatever is already converted is skipped next time.

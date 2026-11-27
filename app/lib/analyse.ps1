@@ -190,11 +190,11 @@ function Run-Analyse($task) {
     }
     $r = Invoke-Logged $AnaPy $argList $onLine
     if ($r.Code) { throw ((L 'De analyse stopte met een fout' 'The analysis stopped with an error') + ": $(Last-Lines $r.Err)") }
-    # WAV voor oudere CDJ's: een tweede rekordbox.xml die naar WAV-kopieen wijst
+    # AIFF voor oudere CDJ's: een tweede rekordbox.xml die naar AIFF-kopieen wijst
     $wavMsg = ''
     if ($task.wav -and $out.rekordbox -and (Test-Path -LiteralPath $out.rekordbox)) {
         Install-WavPython
-        $out.wav = "$base (rekordbox WAV).xml"
+        $out.wav = "$base (rekordbox AIFF).xml"
         $wavMsg = ' ' + (Format-WavResult (Convert-RekordboxWav $out.rekordbox $out.wav '') $out.wav)
     }
     $msg =if ($st.bewaard) { L "$($st.ok) tracks geanalyseerd, $($st.bewaard) overgeslagen omdat ze al klaar waren." "$($st.ok) tracks analysed, $($st.bewaard) skipped because they were already done." } else { L "$($st.ok) van $($files.Count) tracks geanalyseerd." "$($st.ok) of $($files.Count) tracks analysed." }
